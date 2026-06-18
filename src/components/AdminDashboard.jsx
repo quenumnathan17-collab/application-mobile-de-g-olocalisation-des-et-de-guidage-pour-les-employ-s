@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { 
   Users, Briefcase, Map, Plus, Search, 
   MapPin, Archive, Trash2, Calendar, 
@@ -120,9 +121,6 @@ export default function AdminDashboard({
   useEffect(() => {
     if (activeTab !== 'supervision' || !mapRef.current) return;
 
-    const L = window.L;
-    if (!L) return;
-
     // Center map on Abidjan
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: true,
@@ -147,9 +145,6 @@ export default function AdminDashboard({
   useEffect(() => {
     if (activeTab !== 'supervision' || !mapInstance.current || !markersGroup.current) return;
     
-    const L = window.L;
-    if (!L) return;
-
     // Clear previous markers
     markersGroup.current.clearLayers();
 

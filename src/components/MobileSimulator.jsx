@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import L from 'leaflet';
 import { 
   LogOut, Map, List, Navigation, Clock, 
   WifiOff, Search, Compass, ChevronRight, 
@@ -207,9 +208,6 @@ export default function MobileSimulator({
   useEffect(() => {
     if (!activeEmployeeId || mobileTab !== 'map' || !mapRef.current) return;
 
-    const L = window.L;
-    if (!L) return;
-
     // Initialize Map centered on employee
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: false, // Cleaner UI
@@ -235,9 +233,6 @@ export default function MobileSimulator({
   // Redraw Mobile Map markers and routes
   useEffect(() => {
     if (!activeEmployeeId || mobileTab !== 'map' || !mapInstance.current || !markersGroup.current) return;
-
-    const L = window.L;
-    if (!L) return;
 
     // Clear previous
     markersGroup.current.clearLayers();
