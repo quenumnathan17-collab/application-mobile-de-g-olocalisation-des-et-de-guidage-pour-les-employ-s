@@ -1,0 +1,117 @@
+// Données initiales fictives adaptées à la Côte d'Ivoire (Abidjan)
+
+export const initialEmployees = [
+  {
+    id: "emp_1",
+    name: "Koffi Kouadio",
+    email: "koffi.kouadio@yaconsulting.ci",
+    phone: "07 08 09 10 11",
+    role: "employee",
+    status: "active",
+    gps: { lat: 5.3245, lng: -4.0205 }, // Plateau, Abidjan
+    workingHours: { start: "07:30", end: "17:30" },
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "emp_2",
+    name: "Aminata Diallo",
+    email: "aminata.diallo@yaconsulting.ci",
+    phone: "05 45 67 89 01",
+    role: "employee",
+    status: "active",
+    gps: { lat: 5.3571, lng: -3.9897 }, // Cocody St-Jean, Abidjan
+    workingHours: { start: "08:00", end: "18:00" },
+    avatar: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80"
+  },
+  {
+    id: "emp_admin",
+    name: "Thomas Touré",
+    email: "thomas.toure@yaconsulting.ci",
+    phone: "01 22 33 44 55",
+    role: "admin",
+    status: "active",
+    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"
+  }
+];
+
+export const initialClients = [
+  {
+    id: "client_1",
+    name: "Société Ivoirienne de Banque (SIB)",
+    type: "entreprise",
+    address: "Boulevard de la République, Plateau, Abidjan",
+    gps: { lat: 5.3211, lng: -4.0180 },
+    archived: false
+  },
+  {
+    id: "client_2",
+    name: "M. Bakary Bamba",
+    type: "particulier",
+    address: "Avenue 8, Rue 12, Zone 4, Marcory, Abidjan",
+    gps: { lat: 5.3050, lng: -3.9785 },
+    archived: false
+  },
+  {
+    id: "client_3",
+    name: "Clinique Médicale de l'Indénié",
+    type: "entreprise",
+    address: "Avenue Noguès, Plateau, Abidjan",
+    gps: { lat: 5.3405, lng: -4.0150 },
+    archived: false
+  },
+  {
+    id: "client_4",
+    name: "Mme. Marie-Claude Konan",
+    type: "particulier",
+    address: "Cité CNPS, Angré 22e Arrondissement, Cocody, Abidjan",
+    gps: { lat: 5.3955, lng: -3.9710 },
+    archived: false
+  },
+  {
+    id: "client_5",
+    name: "Orange Côte d'Ivoire",
+    type: "entreprise",
+    address: "Boulevard Valéry Giscard d'Estaing, Marcory, Abidjan",
+    gps: { lat: 5.3150, lng: -3.9920 },
+    archived: false
+  }
+];
+
+export const initialOperations = [
+  {
+    id: "op_1",
+    clientId: "client_1",
+    description: "Maintenance préventive des serveurs du siège social (SIB)",
+    date: "2026-06-18",
+    employeeId: "emp_1",
+    status: "en cours",
+    createdAt: "2026-06-17T10:00:00Z"
+  },
+  {
+    id: "op_2",
+    clientId: "client_2",
+    description: "Installation et configuration de la fibre optique à domicile",
+    date: "2026-06-18",
+    employeeId: "emp_1",
+    status: "planifiée",
+    createdAt: "2026-06-17T11:30:00Z"
+  },
+  {
+    id: "op_3",
+    clientId: "client_3",
+    description: "Audit de sécurité réseau et mise à jour du firewall de la clinique",
+    date: "2026-06-18",
+    employeeId: "emp_2",
+    status: "en cours",
+    createdAt: "2026-06-17T14:15:00Z"
+  },
+  {
+    id: "op_4",
+    clientId: "client_4",
+    description: "Dépannage de la liaison sans fil et paramétrage du routeur WiFi",
+    date: "2026-06-19",
+    employeeId: "emp_2",
+    status: "planifiée",
+    createdAt: "2026-06-18T08:00:00Z"
+  }
+];
