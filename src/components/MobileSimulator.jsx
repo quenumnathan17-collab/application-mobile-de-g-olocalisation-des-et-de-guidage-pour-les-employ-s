@@ -335,7 +335,7 @@ export default function MobileSimulator({
         {/* Notch & Status bar */}
         <div className="phone-notch"></div>
         <div className="phone-status-bar">
-          <span>{new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span>{new Date().toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' })}</span>
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
             {isOffline ? <WifiOff size={12} style={{ color: '#ef4444' }} /> : '📶'}
             <span>100% 🔋</span>

@@ -60,43 +60,35 @@ export default function AdminDashboard({
     };
   };
 
-  const handleAddClientSubmit = (e) => {
+  const handleAddClientSubmit = async (e) => {
     e.preventDefault();
     setGeocodingAlert(null);
 
-    const gpsCoords = simulateGeocode(newClientAddress);
+    try {
+      const savedClient = await addClient({
+        name: newClientName,
+        type: newClientType,
+        address: newClientAddress
+      });
 
-    if (!gpsCoords) {
+      // Show success message briefly before closing
+      setGeocodingAlert({
+        type: 'success',
+        text: `Géocodage réussi ! Coordonnées trouvées : Lat ${savedClient.gps.lat.toFixed(4)}, Lng ${savedClient.gps.lng.toFixed(4)}`
+      });
+
+      setTimeout(() => {
+        setShowAddClient(false);
+        setNewClientName('');
+        setNewClientAddress('');
+        setGeocodingAlert(null);
+      }, 1500);
+    } catch (err) {
       setGeocodingAlert({
         type: 'error',
-        text: "Échec du géocodage. L'adresse n'a pas pu être convertie en coordonnées GPS. Veuillez préciser l'adresse (ex: Rue, Code Postal, Ville)."
+        text: err.message || "Échec du géocodage. Veuillez préciser l'adresse (ex: Commune, Quartier, Abidjan)."
       });
-      return;
     }
-
-    const client = {
-      id: "client_" + (clients.length + 1),
-      name: newClientName,
-      type: newClientType,
-      address: newClientAddress,
-      gps: gpsCoords,
-      archived: false
-    };
-
-    addClient(client);
-    
-    // Show success message briefly before closing
-    setGeocodingAlert({
-      type: 'success',
-      text: `Géocodage réussi ! Coordonnées trouvées : Lat ${gpsCoords.lat.toFixed(4)}, Lng ${gpsCoords.lng.toFixed(4)}`
-    });
-
-    setTimeout(() => {
-      setShowAddClient(false);
-      setNewClientName('');
-      setNewClientAddress('');
-      setGeocodingAlert(null);
-    }, 1500);
   };
 
   const handleAddOpSubmit = (e) => {
@@ -499,7 +491,7 @@ export default function AdminDashboard({
                           <td>
                             <div style={{ display: 'flex', alignItem: 'center', gap: '0.25rem' }}>
                               <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-                              {new Date(op.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(op.date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'short', year: 'numeric' })}
                             </div>
                           </td>
                           <td>
