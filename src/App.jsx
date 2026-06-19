@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminDashboard from './components/AdminDashboard';
 import MobileSimulator from './components/MobileSimulator';
-import { Sun, Moon, Bell, Navigation, Info } from 'lucide-react';
+import { Sun, Moon, Bell, Navigation, Info, LayoutGrid, Monitor, Smartphone } from 'lucide-react';
 
 export default function App() {
   // 1. Centralized States
@@ -15,6 +15,9 @@ export default function App() {
     const saved = localStorage.getItem('ya_theme');
     return saved || 'light';
   });
+
+  // Layout Mode State: 'split' | 'admin' | 'mobile'
+  const [layoutMode, setLayoutMode] = useState('split');
 
   // Mobile push notifications queue
   const [activeNotification, setActiveNotification] = useState(null);
@@ -154,10 +157,81 @@ export default function App() {
           <Navigation size={28} style={{ transform: 'rotate(45deg)' }} />
           YA CONSULTING <span>Portail Interventions</span>
         </div>
+
+        {/* Layout Switcher Buttons */}
+        <div className="layout-switch-group" style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)', overflow: 'hidden', backgroundColor: 'var(--bg-card)', padding: '2px' }}>
+          <button 
+            onClick={() => setLayoutMode('split')}
+            className={`layout-switch-btn ${layoutMode === 'split' ? 'active' : ''}`}
+            style={{
+              background: layoutMode === 'split' ? 'var(--primary)' : 'none',
+              color: layoutMode === 'split' ? 'white' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.4rem 0.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+            title="Double Vue"
+          >
+            <LayoutGrid size={15} />
+            <span className="layout-btn-text">Double Vue</span>
+          </button>
+          <button 
+            onClick={() => setLayoutMode('admin')}
+            className={`layout-switch-btn ${layoutMode === 'admin' ? 'active' : ''}`}
+            style={{
+              background: layoutMode === 'admin' ? 'var(--primary)' : 'none',
+              color: layoutMode === 'admin' ? 'white' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.4rem 0.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+            title="Administration Plein Écran"
+          >
+            <Monitor size={15} />
+            <span className="layout-btn-text">Portail Admin</span>
+          </button>
+          <button 
+            onClick={() => setLayoutMode('mobile')}
+            className={`layout-switch-btn ${layoutMode === 'mobile' ? 'active' : ''}`}
+            style={{
+              background: layoutMode === 'mobile' ? 'var(--primary)' : 'none',
+              color: layoutMode === 'mobile' ? 'white' : 'var(--text-muted)',
+              border: 'none',
+              borderRadius: '6px',
+              padding: '0.4rem 0.8rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              transition: 'all 0.2s'
+            }}
+            title="Simulateur Mobile Plein Écran"
+          >
+            <Smartphone size={15} />
+            <span className="layout-btn-text">Simulateur Mobile</span>
+          </button>
+        </div>
+
         <div className="header-actions">
           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
             <Info size={14} />
-            <span>Serveur Backend d'API actif ! Actions synchronisées en temps réel.</span>
+            <span>Serveur API actif ! Synchronisation temps réel.</span>
           </div>
           <button className="theme-switch-btn" onClick={toggleTheme} title="Changer de thème">
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -166,7 +240,7 @@ export default function App() {
       </header>
 
       {/* 2. Main split screens layout */}
-      <main className="main-content">
+      <main className={`main-content layout-${layoutMode}`}>
         {/* Left Side: Admin Dashboard */}
         <AdminDashboard 
           clients={clients}
@@ -176,10 +250,11 @@ export default function App() {
           updateClient={updateClient}
           addOperation={addOperation}
           updateOperationStatus={updateOperationStatus}
+          layoutMode={layoutMode}
         />
 
         {/* Right Side: Smartphone Simulator for Technicians */}
-        <div style={{ position: 'relative', height: '100%' }}>
+        <div style={{ display: layoutMode === 'admin' ? 'none' : 'block', position: 'relative', height: '100%', overflow: 'hidden' }}>
           {/* Simulated Toast Notification in phone */}
           {activeNotification && activeEmployeeId && (
             <div className="notif-toast" style={{ position: 'absolute', top: '70px', right: '40px', width: '300px', zIndex: 1000 }}>
@@ -200,6 +275,7 @@ export default function App() {
             updateOperationStatus={updateOperationStatus}
             updateEmployeeGps={updateEmployeeGps}
             addNotification={triggerNotification}
+            layoutMode={layoutMode}
           />
         </div>
       </main>

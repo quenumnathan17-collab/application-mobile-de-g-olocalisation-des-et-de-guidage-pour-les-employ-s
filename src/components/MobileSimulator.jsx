@@ -14,7 +14,8 @@ export default function MobileSimulator({
   setActiveEmployeeId,
   updateOperationStatus,
   updateEmployeeGps,
-  addNotification
+  addNotification,
+  layoutMode
 }) {
   const [mobileTab, setMobileTab] = useState('map'); // 'map', 'list'
   const [selectedOp, setSelectedOp] = useState(null);
@@ -229,6 +230,15 @@ export default function MobileSimulator({
       }
     };
   }, [activeEmployeeId, mobileTab]);
+
+  // Invalidate map size when mobileTab or layoutMode changes
+  useEffect(() => {
+    if (mapInstance.current) {
+      setTimeout(() => {
+        mapInstance.current.invalidateSize();
+      }, 200);
+    }
+  }, [mobileTab, layoutMode]);
 
   // Redraw Mobile Map markers and routes
   useEffect(() => {

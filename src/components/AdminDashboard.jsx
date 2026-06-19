@@ -56,7 +56,8 @@ export default function AdminDashboard({
   addClient, 
   updateClient,
   addOperation,
-  updateOperationStatus
+  updateOperationStatus,
+  layoutMode
 }) {
   const [activeTab, setActiveTab] = useState(0); // 0: supervision, 1: clients, 2: operations
   const [searchQuery, setSearchQuery] = useState('');
@@ -243,6 +244,15 @@ export default function AdminDashboard({
     };
   }, [activeTab]);
 
+  // Invalidate map size when tab or layoutMode changes
+  useEffect(() => {
+    if (mapInstance.current) {
+      setTimeout(() => {
+        mapInstance.current.invalidateSize();
+      }, 200);
+    }
+  }, [activeTab, layoutMode]);
+
   // Update Map Markers
   useEffect(() => {
     if (activeTab !== 0 || !mapInstance.current || !markersGroup.current) return;
@@ -421,7 +431,7 @@ export default function AdminDashboard({
 
   return (
     <ThemeProvider theme={muiTheme}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid', borderColor: 'divider', bgcolor: 'background.default', overflow: 'hidden' }}>
+      <Box sx={{ display: layoutMode === 'mobile' ? 'none' : 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid', borderColor: 'divider', bgcolor: 'background.default', overflow: 'hidden' }}>
         {/* Navigation Tabs */}
         <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3 }}>
           <Tabs 
