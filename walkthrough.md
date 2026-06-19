@@ -1,6 +1,6 @@
-# Walkthrough — Application de Géolocalisation & Guidage (V3 - Prisma & Material UI)
+# Walkthrough — Application de Géolocalisation & Guidage (V3 - Prisma, Material UI & Flexible Layout)
 
-Ce document présente l'architecture finale et les améliorations visuelles et structurelles apportées lors de la **V3** pour **YA CONSULTING**. 
+Ce document présente l'architecture finale, les améliorations visuelles et la flexibilité de disposition apportées lors de la **V3** pour **YA CONSULTING**.
 
 ---
 
@@ -22,13 +22,26 @@ L'interface d'administration a été entièrement réécrite pour utiliser les c
   * Puces de statut (`Chip`) colorées pour suivre l'avancement des interventions.
   * Alertes visuelles lors du géocodage.
 
+### 3. Navigation Flexible et Plein Écran (Nouveau !)
+Pour offrir une meilleure expérience utilisateur, un groupe de boutons de basculement de disposition a été intégré au centre de l'en-tête de l'application :
+* **Double Vue (Split View)** : Affiche simultanément le tableau de bord d'administration à gauche et le simulateur mobile à droite (mode par défaut).
+* **Portail Admin (Full width)** : Masque le simulateur mobile et élargit le tableau de bord d'administration pour occuper toute la largeur, permettant de consulter de grands tableaux de données ou des cartes de supervision géantes de manière confortable.
+* **Simulateur Mobile (Centered)** : Masque le dashboard admin et centre le smartphone sur l'écran pour se focaliser uniquement sur l'expérience mobile du technicien sur le terrain.
+* **Redimensionnement dynamique des cartes** : Les instances de cartes Leaflet appellent automatiquement `map.invalidateSize()` lors de chaque basculement de layout pour recalculer instantanément le rendu des tuiles géographiques sans aucun bug visuel.
+
 ---
 
-## 🎥 Démonstration Vidéo & Vérification
+## 🎥 Démonstrations Vidéo & Vérification
 
-Voici l'enregistrement complet de la session de test réalisée par le sous-agent de navigation. Il montre le changement de thème, la navigation entre les onglets et la création réussie d'un nouveau client (géocodé à Abidjan et stocké en base SQL) :
+### A. Démo de Navigation Flexible (Basculements Plein Écran)
+Voici l'enregistrement de la session de test démontrant la flexibilité des nouvelles options de disposition :
 
-![Enregistrement des tests de l'application](file:///C:/Users/quenu/.gemini/antigravity-ide/brain/6c871afa-ef22-4f37-9d4a-a881c24586dd/mui_dashboard_verify_1781861547756.webp)
+![Enregistrement des tests de disposition flexible](file:///C:/Users/quenu/.gemini/antigravity-ide/brain/6c871afa-ef22-4f37-9d4a-a881c24586dd/layout_switch_test_1781863933254.webp)
+
+### B. Démo Fonctionnelle Globale (Ajout client & Géocodage)
+Voici l'enregistrement montrant le changement de thème, la navigation entre les onglets et la création réussie d'un nouveau client géocodé à Abidjan et stocké en base SQL :
+
+![Enregistrement des tests fonctionnels de l'application](file:///C:/Users/quenu/.gemini/antigravity-ide/brain/6c871afa-ef22-4f37-9d4a-a881c24586dd/mui_dashboard_verify_1781861547756.webp)
 
 ---
 
@@ -37,20 +50,16 @@ Voici l'enregistrement complet de la session de test réalisée par le sous-agen
 * [prisma/schema.prisma](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/prisma/schema.prisma) : Définition des modèles de base de données.
 * [prisma/seed.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/prisma/seed.js) : Script de peuplement de la base de données SQL.
 * [server.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/server.js) : API Express utilisant le `PrismaClient` pour exécuter les requêtes SQL.
-* [src/components/AdminDashboard.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/AdminDashboard.jsx) : Dashboard web entièrement réécrit en Material UI.
-* [package.json](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/package.json) : Dépendances Prisma et MUI installées.
+* [src/App.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/App.jsx) : Composant principal gérant l'état et le sélecteur de layout flexible.
+* [src/components/AdminDashboard.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/AdminDashboard.jsx) : Dashboard web en Material UI adapté pour la bascule de taille.
+* [src/components/MobileSimulator.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/MobileSimulator.jsx) : Simulateur mobile avec recalcul automatique de carte.
 
 ---
 
 ## 🧪 Validation Technique
 
 ### 1. Compilation
-La commande `npm run build` a été exécutée avec succès en 5.05 secondes, confirmant qu'aucun warning React ou import MUI invalide n'est présent.
+La commande `npm run build` a été validée avec succès en 3.79 secondes. Aucun warning ou conflit n'a été signalé.
 
-### 2. Scénario Utilisateur validé
-* **Navigation fluide** : Les onglets Supervision, Clients et Planification s'affichent correctement et réagissent en temps réel.
-* **Géocodage & Persistance SQL** : 
-  * Création du client *Pharmacie de la Rue des Jardins* à l'adresse *Rue des Jardins, Deux Plateaux, Cocody, Abidjan*.
-  * Le serveur Express a intercepté la requête, a simulé le géocodage sur Abidjan et a généré les coordonnées GPS : `5.36494, -4.05792`.
-  * La ligne a été insérée dans la table `Client` du fichier SQLite `prisma/dev.db` via Prisma.
-  * Le tableau s'est rechargé dynamiquement et a affiché le nouveau client dans la liste.
+### 2. Comportement des Cartes
+Grâce au déclenchement différé de `invalidateSize()`, le passage de la vue double à une vue simple (plein écran) ajuste dynamiquement la carte sans aucune perte de qualité des tuiles OpenStreetMap, préservant également les popups de marqueurs et l'avancement du technicien.
