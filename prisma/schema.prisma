@@ -1,0 +1,44 @@
+// Schema de base de données Prisma pour l'application de géolocalisation et guidage (Prisma 5)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id                String @id
+  name              String
+  email             String @unique
+  phone             String
+  role              String
+  status            String
+  latitude          Float
+  longitude         Float
+  workingHoursStart String
+  workingHoursEnd   String
+  avatar            String
+}
+
+model Client {
+  id        String  @id
+  name      String
+  type      String
+  address   String
+  latitude  Float
+  longitude Float
+  archived  Boolean @default(false)
+}
+
+model Operation {
+  id          String   @id
+  clientId    String
+  description String
+  date        String
+  employeeId  String
+  status      String
+  createdAt   DateTime @default(now())
+}

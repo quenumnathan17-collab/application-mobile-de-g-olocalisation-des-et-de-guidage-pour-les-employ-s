@@ -1,10 +1,53 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
-import { 
-  Users, Briefcase, Map, Plus, Search, 
-  MapPin, Archive, Trash2, Calendar, 
-  Check, AlertCircle, Edit3, ShieldAlert
-} from 'lucide-react';
+import {
+  Box,
+  Tabs,
+  Tab,
+  Typography,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  Avatar,
+  Badge,
+  InputAdornment,
+  Grid,
+  Chip
+} from '@mui/material';
+import {
+  Map as MapIcon,
+  People as PeopleIcon,
+  Work as WorkIcon,
+  Add as AddIcon,
+  Search as SearchIcon,
+  LocationOn as LocationOnIcon,
+  Archive as ArchiveIcon,
+  Unarchive as UnarchiveIcon,
+  CalendarToday as CalendarTodayIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Error as ErrorIcon,
+  Lock as LockIcon,
+  Business as BusinessIcon,
+  Person as PersonIcon,
+  Build as BuildIcon
+} from '@mui/icons-material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 
 export default function AdminDashboard({ 
   clients, 
@@ -15,7 +58,7 @@ export default function AdminDashboard({
   addOperation,
   updateOperationStatus
 }) {
-  const [activeTab, setActiveTab] = useState('supervision'); // 'clients', 'operations', 'supervision'
+  const [activeTab, setActiveTab] = useState(0); // 0: supervision, 1: clients, 2: operations
   const [searchQuery, setSearchQuery] = useState('');
   const [clientTypeFilter, setClientTypeFilter] = useState('all');
   
@@ -40,26 +83,85 @@ export default function AdminDashboard({
   const mapInstance = useRef(null);
   const markersGroup = useRef(null);
 
-  // Address Geocoding simulator
-  const simulateGeocode = (address) => {
-    if (!address.trim()) return null;
-    
-    // Simulate lookup based on keywords or random coordinates near Abidjan center
-    // Let's generate a coordinate near Abidjan center (5.3600, -4.0083)
-    const seed = address.length;
-    const latOffset = (Math.sin(seed) * 0.04);
-    const lngOffset = (Math.cos(seed) * 0.05);
-    
-    // If the address seems completely fake/short, fail it to show error handling
-    if (address.trim().length < 8) {
-      return null;
-    }
-    
-    return {
-      lat: 5.3600 + latOffset,
-      lng: -4.0083 + lngOffset
-    };
-  };
+  // Sync theme with index.css theme attribute on HTML tag
+  const [currentTheme, setCurrentTheme] = useState(() => {
+    return document.documentElement.getAttribute('data-theme') || 'light';
+  });
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      const active = document.documentElement.getAttribute('data-theme') || 'light';
+      setCurrentTheme(active);
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Material UI theme configured to match YA Consulting colors
+  const muiTheme = React.useMemo(() => {
+    const isDark = currentTheme === 'dark';
+    return createTheme({
+      palette: {
+        mode: isDark ? 'dark' : 'light',
+        primary: {
+          main: '#4f46e5', // Indigo
+          dark: '#3730a3',
+          light: '#e0e7ff',
+          contrastText: '#ffffff'
+        },
+        secondary: {
+          main: '#0ea5e9', // Sky
+          light: '#e0f2fe',
+          dark: '#0369a1'
+        },
+        background: {
+          default: isDark ? '#0b0f19' : '#f8fafc',
+          paper: isDark ? '#151c2c' : '#ffffff',
+        },
+        text: {
+          primary: isDark ? '#f8fafc' : '#0f172a',
+          secondary: isDark ? '#94a3b8' : '#64748b',
+        },
+        divider: isDark ? '#2e3b4e' : '#e2e8f0',
+      },
+      typography: {
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        h1: { fontFamily: "'Outfit', sans-serif", fontWeight: 700 },
+        h2: { fontFamily: "'Outfit', sans-serif", fontWeight: 700 },
+        h3: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+        h4: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+        h5: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+        h6: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
+      },
+      shape: {
+        borderRadius: 12,
+      },
+      components: {
+        MuiButton: {
+          styleOverrides: {
+            root: {
+              textTransform: 'none',
+              fontWeight: 600,
+              borderRadius: '10px',
+              padding: '8px 16px',
+            },
+          },
+        },
+        MuiPaper: {
+          styleOverrides: {
+            root: {
+              backgroundImage: 'none',
+            },
+          },
+        },
+      },
+    });
+  }, [currentTheme]);
 
   const handleAddClientSubmit = async (e) => {
     e.preventDefault();
@@ -119,7 +221,7 @@ export default function AdminDashboard({
 
   // Initialize Map
   useEffect(() => {
-    if (activeTab !== 'supervision' || !mapRef.current) return;
+    if (activeTab !== 0 || !mapRef.current) return;
 
     // Center map on Abidjan
     mapInstance.current = L.map(mapRef.current, {
@@ -143,7 +245,7 @@ export default function AdminDashboard({
 
   // Update Map Markers
   useEffect(() => {
-    if (activeTab !== 'supervision' || !mapInstance.current || !markersGroup.current) return;
+    if (activeTab !== 0 || !mapInstance.current || !markersGroup.current) return;
     
     // Clear previous markers
     markersGroup.current.clearLayers();
@@ -292,397 +394,440 @@ export default function AdminDashboard({
   const filteredClients = clients.filter(c => {
     const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           c.address.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = clientTypeFilter === 'all' ? true : c.type === clientTypeFilter;
-    return matchesSearch && matchesType;
+    
+    if (clientTypeFilter === 'archived') {
+      return matchesSearch && c.archived;
+    }
+    if (clientTypeFilter === 'all') {
+      return matchesSearch; // show both archived and active to match original view
+    }
+    return matchesSearch && !c.archived && c.type === clientTypeFilter;
   });
 
+  const getStatusChipColor = (status) => {
+    switch (status) {
+      case 'planifiée':
+        return 'primary';
+      case 'en cours':
+        return 'warning';
+      case 'terminée':
+        return 'success';
+      case 'annulée':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
   return (
-    <div className="admin-pane">
-      <div className="admin-tabs">
-        <button 
-          className={`tab-btn ${activeTab === 'supervision' ? 'active' : ''}`}
-          onClick={() => setActiveTab('supervision')}
-        >
-          <Map size={18} /> Supervision Carte
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'clients' ? 'active' : ''}`}
-          onClick={() => setActiveTab('clients')}
-        >
-          <Users size={18} /> Clients
-        </button>
-        <button 
-          className={`tab-btn ${activeTab === 'operations' ? 'active' : ''}`}
-          onClick={() => setActiveTab('operations')}
-        >
-          <Briefcase size={18} /> Planification & Missions
-        </button>
-      </div>
+    <ThemeProvider theme={muiTheme}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid', borderColor: 'divider', bgcolor: 'background.default', overflow: 'hidden' }}>
+        {/* Navigation Tabs */}
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3 }}>
+          <Tabs 
+            value={activeTab} 
+            onChange={(e, val) => setActiveTab(val)}
+            textColor="primary"
+            indicatorColor="primary"
+            aria-label="admin dashboard navigation"
+          >
+            <Tab icon={<MapIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Supervision Carte" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<PeopleIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Clients" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<WorkIcon sx={{ fontSize: 20 }} />} iconPosition="start" label="Planification & Missions" sx={{ fontWeight: 600, minHeight: 64 }} />
+          </Tabs>
+        </Box>
 
-      <div className="admin-body">
-        {/* TAB 1: SUPERVISION MAP */}
-        {activeTab === 'supervision' && (
-          <div>
-            <div className="toolbar">
-              <div>
-                <h2>Carte de supervision globale</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                  Suivi des techniciens en temps réel et des interventions planifiées ou en cours.
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <span className="badge" style={{ backgroundColor: '#e0e7ff', color: '#4f46e5', border: '1px solid #c7d2fe' }}>
-                  🏢 Client Entreprise
-                </span>
-                <span className="badge" style={{ backgroundColor: '#fae8ff', color: '#86198f', border: '1px solid #f5d0fe' }}>
-                  👤 Client Particulier
-                </span>
-                <span className="badge" style={{ backgroundColor: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-                  🛠️ Technicien actif
-                </span>
-              </div>
-            </div>
+        {/* Dashboard Body */}
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 3 }}>
+          {/* TAB 0: SUPERVISION MAP */}
+          {activeTab === 0 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                  <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    Carte de supervision globale
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Suivi des techniciens en temps réel et des interventions planifiées ou en cours à Abidjan.
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  <Chip icon={<BusinessIcon fontSize="small" />} label="🏢 Client Entreprise" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                  <Chip icon={<PersonIcon fontSize="small" />} label="👤 Client Particulier" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                  <Chip icon={<BuildIcon fontSize="small" />} label="🛠️ Technicien actif" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                </Box>
+              </Box>
 
-            <div className="card" style={{ padding: '0.5rem', overflow: 'hidden' }}>
-              <div ref={mapRef} className="map-container" style={{ height: '540px' }} />
-            </div>
-          </div>
-        )}
+              <Paper elevation={1} sx={{ p: 1, borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider' }}>
+                <Box ref={mapRef} className="map-container" sx={{ height: '540px', width: '100%', borderRadius: '8px', zIndex: 1 }} />
+              </Paper>
+            </Box>
+          )}
 
-        {/* TAB 2: CLIENTS MANAGEMENT */}
-        {activeTab === 'clients' && (
-          <div>
-            <div className="toolbar">
-              <div>
-                <h2>Fiches Clients</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                  Créez, modifiez ou archivez vos clients. L'adresse est géocodée automatiquement.
-                </p>
-              </div>
-              <button className="btn btn-primary" onClick={() => setShowAddClient(true)}>
-                <Plus size={16} /> Nouveau Client
-              </button>
-            </div>
+          {/* TAB 1: CLIENTS MANAGEMENT */}
+          {activeTab === 1 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                  <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    Fiches Clients
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Créez, modifiez ou archivez vos clients. L'adresse est géocodée automatiquement.
+                  </Typography>
+                </Box>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  startIcon={<AddIcon />} 
+                  onClick={() => setShowAddClient(true)}
+                  sx={{ boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)' }}
+                >
+                  Nouveau Client
+                </Button>
+              </Box>
 
-            <div className="card">
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.25rem' }}>
-                <div className="search-input-wrapper">
-                  <Search size={16} className="search-icon" />
-                  <input 
-                    type="text" 
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                  <TextField 
                     placeholder="Rechercher par nom, adresse..." 
-                    className="form-input"
+                    size="small"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon sx={{ color: 'text.secondary' }} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ flexGrow: 1, maxWidth: 320 }}
                   />
-                </div>
-                <select 
-                  className="form-select" 
-                  style={{ width: '180px' }}
-                  value={clientTypeFilter}
-                  onChange={(e) => setClientTypeFilter(e.target.value)}
-                >
-                  <option value="all">Tous les types</option>
-                  <option value="entreprise">Entreprises</option>
-                  <option value="particulier">Particuliers</option>
-                  <option value="archived">Archivés</option>
-                </select>
-              </div>
+                  <FormControl size="small" sx={{ width: 180 }}>
+                    <Select
+                      value={clientTypeFilter}
+                      onChange={(e) => setClientTypeFilter(e.target.value)}
+                    >
+                      <MenuItem value="all">Tous les types</MenuItem>
+                      <MenuItem value="entreprise">Entreprises</MenuItem>
+                      <MenuItem value="particulier">Particuliers</MenuItem>
+                      <MenuItem value="archived">Archivés</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
 
-              <div className="table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Nom / Raison Sociale</th>
-                      <th>Type</th>
-                      <th>Adresse Postale Complexe</th>
-                      <th>GPS (Coordonnées)</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredClients.map((client) => (
-                      <tr key={client.id} style={{ opacity: client.archived ? 0.6 : 1 }}>
-                        <td style={{ fontWeight: 600 }}>{client.name}</td>
-                        <td>
-                          <span className={`badge badge-${client.type}`}>
-                            {client.type === 'entreprise' ? '🏢 Entreprise' : '👤 Particulier'}
-                          </span>
-                        </td>
-                        <td>{client.address}</td>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          {client.gps.lat.toFixed(5)}, {client.gps.lng.toFixed(5)}
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button 
-                              className="btn btn-secondary btn-icon"
-                              title={client.archived ? "Restaurer" : "Archiver"}
+                <TableContainer>
+                  <Table sx={{ minWidth: 650 }}>
+                    <TableHead sx={{ bgcolor: 'background.default' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Nom / Raison Sociale</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Type</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Adresse Postale</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>GPS (Coordonnées)</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredClients.map((client) => (
+                        <TableRow 
+                          key={client.id} 
+                          hover 
+                          sx={{ 
+                            opacity: client.archived ? 0.55 : 1,
+                            transition: 'opacity 0.2s',
+                            '&:last-child td, &:last-child th': { border: 0 }
+                          }}
+                        >
+                          <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+                            {client.name}
+                          </TableCell>
+                          <TableCell>
+                            <Chip 
+                              icon={client.type === 'entreprise' ? <BusinessIcon sx={{ fontSize: '14px !important' }} /> : <PersonIcon sx={{ fontSize: '14px !important' }} />}
+                              label={client.type === 'entreprise' ? 'Entreprise' : 'Particulier'} 
+                              size="small"
+                              variant={client.type === 'entreprise' ? 'filled' : 'outlined'}
+                              color={client.type === 'entreprise' ? 'default' : 'secondary'}
+                              sx={{ fontWeight: 600 }}
+                            />
+                          </TableCell>
+                          <TableCell>{client.address}</TableCell>
+                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
+                            {client.gps.lat.toFixed(5)}, {client.gps.lng.toFixed(5)}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              color={client.archived ? 'primary' : 'inherit'}
                               onClick={() => updateClient({ ...client, archived: !client.archived })}
+                              startIcon={client.archived ? <UnarchiveIcon sx={{ fontSize: 16 }} /> : <ArchiveIcon sx={{ fontSize: 16 }} />}
+                              sx={{ py: 0.5, borderRadius: '8px' }}
                             >
-                              <Archive size={14} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredClients.length === 0 && (
-                      <tr>
-                        <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>
-                          Aucun client trouvé.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
+                              {client.archived ? 'Restaurer' : 'Archiver'}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {filteredClients.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                            Aucun client trouvé.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Box>
+          )}
 
-        {/* TAB 3: OPERATIONS / ASSIGNMENTS */}
-        {activeTab === 'operations' && (
-          <div>
-            <div className="toolbar">
-              <div>
-                <h2>Planification des interventions</h2>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                  Assignation des missions et suivi du statut des interventions.
-                </p>
-              </div>
-              <button className="btn btn-primary" onClick={() => setShowAddOp(true)}>
-                <Plus size={16} /> Créer une Opération
-              </button>
-            </div>
+          {/* TAB 2: OPERATIONS / ASSIGNMENTS */}
+          {activeTab === 2 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+                <Box>
+                  <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    Planification des interventions
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Assignation des missions et suivi du statut des interventions.
+                  </Typography>
+                </Box>
+                <Button 
+                  variant="contained" 
+                  color="primary" 
+                  startIcon={<AddIcon />} 
+                  onClick={() => setShowAddOp(true)}
+                  sx={{ boxShadow: '0 4px 12px rgba(79, 70, 229, 0.2)' }}
+                >
+                  Créer une Opération
+                </Button>
+              </Box>
 
-            <div className="card">
-              <div className="table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Client</th>
-                      <th>Description de la Mission</th>
-                      <th>Date Prévue</th>
-                      <th>Technicien Assigné</th>
-                      <th>Statut</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {operations.map((op) => {
-                      const client = clients.find(c => c.id === op.clientId);
-                      const employee = employees.find(e => e.id === op.employeeId);
-                      
-                      return (
-                        <tr key={op.id}>
-                          <td style={{ fontWeight: 600 }}>
-                            {client ? client.name : "Inconnu"}
-                            <br />
-                            <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: 'var(--text-muted)' }}>
-                              {client ? client.address : ""}
-                            </span>
-                          </td>
-                          <td style={{ maxWidth: '300px' }}>{op.description}</td>
-                          <td>
-                            <div style={{ display: 'flex', alignItem: 'center', gap: '0.25rem' }}>
-                              <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-                              {new Date(op.date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'short', year: 'numeric' })}
-                            </div>
-                          </td>
-                          <td>
-                            {employee ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <img src={employee.avatar} alt={employee.name} style={{ width: '24px', height: '24px', borderRadius: '50%' }} />
-                                <span>{employee.name}</span>
-                              </div>
-                            ) : "Non assigné"}
-                          </td>
-                          <td>
-                            <span className={`badge badge-${op.status.replace(' ', '-')}`}>
-                              {op.status}
-                            </span>
-                          </td>
-                          <td>
-                            <select 
-                              className="form-select" 
-                              style={{ width: '130px', padding: '0.25rem 0.5rem', fontSize: '0.75rem' }}
-                              value={op.status}
-                              onChange={(e) => updateOperationStatus(op.id, e.target.value)}
-                            >
-                              <option value="planifiée">Planifiée</option>
-                              <option value="en cours">En cours</option>
-                              <option value="terminée">Terminée</option>
-                              <option value="annulée">Annulée</option>
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+              <Paper sx={{ p: 2.5, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+                <TableContainer>
+                  <Table sx={{ minWidth: 650 }}>
+                    <TableHead sx={{ bgcolor: 'background.default' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Client</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Description de la Mission</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date Prévue</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Technicien Assigné</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Statut</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Changer le statut</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {operations.map((op) => {
+                        const client = clients.find(c => c.id === op.clientId);
+                        const employee = employees.find(e => e.id === op.employeeId);
+                        
+                        return (
+                          <TableRow key={op.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                            <TableCell sx={{ fontWeight: 600 }}>
+                              {client ? client.name : "Inconnu"}
+                              <Typography variant="caption" display="block" sx={{ color: 'text.secondary', fontWeight: 'normal' }}>
+                                {client ? client.address : ""}
+                              </Typography>
+                            </TableCell>
+                            <TableCell sx={{ maxWidth: '280px', wordBreak: 'break-word' }}>{op.description}</TableCell>
+                            <TableCell>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <CalendarTodayIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                                <Typography variant="body2">
+                                  {new Date(op.date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              {employee ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Avatar src={employee.avatar} alt={employee.name} sx={{ width: 28, height: 28, border: '1px solid', borderColor: 'divider' }} />
+                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{employee.name}</Typography>
+                                </Box>
+                              ) : "Non assigné"}
+                            </TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={op.status} 
+                                size="small" 
+                                color={getStatusChipColor(op.status)}
+                                sx={{ fontWeight: 600, textTransform: 'capitalize' }}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <FormControl size="small" sx={{ width: 140 }}>
+                                <Select 
+                                  value={op.status}
+                                  onChange={(e) => updateOperationStatus(op.id, e.target.value)}
+                                  sx={{ fontSize: '0.8125rem' }}
+                                >
+                                  <MenuItem value="planifiée">Planifiée</MenuItem>
+                                  <MenuItem value="en cours">En cours</MenuItem>
+                                  <MenuItem value="terminée">Terminée</MenuItem>
+                                  <MenuItem value="annulée">Annulée</MenuItem>
+                                </Select>
+                              </FormControl>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                      {operations.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={6} align="center" sx={{ py: 6, color: 'text.secondary' }}>
+                            Aucune opération planifiée.
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </Paper>
+            </Box>
+          )}
+        </Box>
 
-      {/* MODAL: ADD CLIENT */}
-      {showAddClient && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">Ajouter un nouveau client</h3>
-            <form onSubmit={handleAddClientSubmit}>
-              <div className="form-group">
-                <label className="form-label">Nom ou Raison Sociale</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  required 
-                  placeholder="Ex: Orange CI, M. Bamba Bakary"
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                />
-              </div>
+        {/* MODAL: ADD CLIENT */}
+        <Dialog open={showAddClient} onClose={() => { setShowAddClient(false); setGeocodingAlert(null); }} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Ajouter un nouveau client</DialogTitle>
+          <form onSubmit={handleAddClientSubmit}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+              <TextField
+                label="Nom ou Raison Sociale"
+                required
+                fullWidth
+                placeholder="Ex: Orange CI, M. Bamba Bakary"
+                value={newClientName}
+                onChange={(e) => setNewClientName(e.target.value)}
+              />
 
-              <div className="form-group">
-                <label className="form-label">Type de Client</label>
-                <select 
-                  className="form-select" 
+              <FormControl fullWidth>
+                <InputLabel id="client-type-label">Type de Client</InputLabel>
+                <Select
+                  labelId="client-type-label"
+                  label="Type de Client"
                   value={newClientType}
                   onChange={(e) => setNewClientType(e.target.value)}
                 >
-                  <option value="entreprise">🏢 Entreprise</option>
-                  <option value="particulier">👤 Particulier</option>
-                </select>
-              </div>
+                  <MenuItem value="entreprise">🏢 Entreprise</MenuItem>
+                  <MenuItem value="particulier">👤 Particulier</MenuItem>
+                </Select>
+              </FormControl>
 
-              <div className="form-group">
-                <label className="form-label">Adresse Postale Complète</label>
-                <input 
-                  type="text" 
-                  className="form-input" 
-                  required 
-                  placeholder="Ex: Boulevard Giscard d'Estaing, Marcory, Abidjan"
-                  value={newClientAddress}
-                  onChange={(e) => setNewClientAddress(e.target.value)}
-                />
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem', display: 'block' }}>
-                  💡 L'adresse sera géocodée automatiquement par notre moteur cartographique.
-                </span>
-              </div>
+              <TextField
+                label="Adresse Postale Complète"
+                required
+                fullWidth
+                placeholder="Ex: Boulevard Giscard d'Estaing, Marcory, Abidjan"
+                value={newClientAddress}
+                onChange={(e) => setNewClientAddress(e.target.value)}
+                helperText="💡 L'adresse sera géocodée automatiquement par notre moteur cartographique à Abidjan."
+              />
 
               {geocodingAlert && (
-                <div style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  marginBottom: '1rem',
-                  fontSize: '0.875rem',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '0.5rem',
-                  backgroundColor: geocodingAlert.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
-                  color: geocodingAlert.type === 'success' ? 'var(--success-text)' : 'var(--danger-text)',
-                  border: `1px solid ${geocodingAlert.type === 'success' ? '#a7f3d0' : '#fecaca'}`
-                }}>
-                  {geocodingAlert.type === 'success' ? <Check size={16} style={{ marginTop: '2px' }} /> : <ShieldAlert size={16} style={{ marginTop: '2px' }} />}
-                  <span>{geocodingAlert.text}</span>
-                </div>
+                <Alert 
+                  severity={geocodingAlert.type} 
+                  icon={geocodingAlert.type === 'success' ? <CheckCircleIcon /> : <WarningIcon />}
+                >
+                  {geocodingAlert.text}
+                </Alert>
               )}
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
+              <Button 
+                onClick={() => { setShowAddClient(false); setGeocodingAlert(null); }}
+                disabled={geocodingAlert?.type === 'success'}
+                color="inherit"
+              >
+                Annuler
+              </Button>
+              <Button 
+                type="submit" 
+                variant="contained"
+                disabled={geocodingAlert?.type === 'success'}
+              >
+                Enregistrer & Géocoder
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
 
-              <div className="modal-footer">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary" 
-                  onClick={() => { setShowAddClient(false); setGeocodingAlert(null); }}
-                  disabled={geocodingAlert?.type === 'success'}
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-primary"
-                  disabled={geocodingAlert?.type === 'success'}
-                >
-                  Enregistrer & Géocoder
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* MODAL: ADD OPERATION */}
-      {showAddOp && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3 className="modal-title">Créer et assigner une opération</h3>
-            <form onSubmit={handleAddOpSubmit}>
-              <div className="form-group">
-                <label className="form-label">Client</label>
-                <select 
-                  className="form-select" 
-                  required
+        {/* MODAL: ADD OPERATION */}
+        <Dialog open={showAddOp} onClose={() => setShowAddOp(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700, pb: 1 }}>Créer et assigner une opération</DialogTitle>
+          <form onSubmit={handleAddOpSubmit}>
+            <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, pt: 1 }}>
+              <FormControl fullWidth required>
+                <InputLabel id="operation-client-label">Client</InputLabel>
+                <Select
+                  labelId="operation-client-label"
+                  label="Client"
                   value={newOpClient}
                   onChange={(e) => setNewOpClient(e.target.value)}
                 >
-                  <option value="">-- Sélectionner un client --</option>
                   {clients.filter(c => !c.archived).map(c => (
-                    <option key={c.id} value={c.id}>{c.name} ({c.type})</option>
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name} ({c.type})
+                    </MenuItem>
                   ))}
-                </select>
-              </div>
+                </Select>
+              </FormControl>
 
-              <div className="form-group">
-                <label className="form-label">Description de la mission</label>
-                <textarea 
-                  className="form-textarea" 
-                  rows="3"
-                  required
-                  placeholder="Détails techniques de l'intervention..."
-                  value={newOpDesc}
-                  onChange={(e) => setNewOpDesc(e.target.value)}
-                />
-              </div>
+              <TextField
+                label="Description de la mission"
+                required
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Détails techniques de l'intervention..."
+                value={newOpDesc}
+                onChange={(e) => setNewOpDesc(e.target.value)}
+              />
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Date prévue</label>
-                  <input 
-                    type="date" 
-                    className="form-input" 
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Date prévue"
+                    type="date"
                     required
+                    fullWidth
                     value={newOpDate}
                     onChange={(e) => setNewOpDate(e.target.value)}
+                    InputLabelProps={{ shrink: true }}
                   />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Technicien assigné</label>
-                  <select 
-                    className="form-select" 
-                    required
-                    value={newOpEmp}
-                    onChange={(e) => setNewOpEmp(e.target.value)}
-                  >
-                    <option value="">-- Sélectionner --</option>
-                    {employees.filter(e => e.role === 'employee').map(e => (
-                      <option key={e.id} value={e.id}>{e.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddOp(false)}>
-                  Annuler
-                </button>
-                <button type="submit" className="btn btn-primary">
-                  Créer l'intervention
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel id="operation-tech-label">Technicien assigné</InputLabel>
+                    <Select
+                      labelId="operation-tech-label"
+                      label="Technicien assigné"
+                      value={newOpEmp}
+                      onChange={(e) => setNewOpEmp(e.target.value)}
+                    >
+                      {employees.filter(e => e.role === 'employee').map(e => (
+                        <MenuItem key={e.id} value={e.id}>
+                          {e.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </DialogContent>
+            <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
+              <Button onClick={() => setShowAddOp(false)} color="inherit">
+                Annuler
+              </Button>
+              <Button type="submit" variant="contained">
+                Créer l'intervention
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+      </Box>
+    </ThemeProvider>
   );
 }

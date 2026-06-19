@@ -1,52 +1,62 @@
 # DOCUMENTATION TECHNIQUE — Géolocalisation & Guidage (Abidjan, CI)
 
-Cette documentation détaille l'architecture logicielle, les technologies employées et l'alignement fonctionnel du prototype par rapport au cahier des charges de l'application.
+Cette documentation détaille l'architecture logicielle, la stack technologique et l'alignement fonctionnel du prototype par rapport au cahier des charges de l'application.
 
 ---
 
 ## 🏗️ Architecture et Flux de Données
 
-Le prototype utilise une architecture **unifiée et réactive** pour simuler l'écosystème complet en une seule application web :
+Le prototype utilise une architecture **découplée (Full-stack)** réunissant un serveur API backend et une interface client réactive :
 
 ```
-                  ┌──────────────────────────────┐
-                  │           App.jsx            │
-                  │   (État global centralisé)   │
-                  └──────┬────────────────┬──────┘
-                         │                │
-       Synchronisation   │                │   Synchronisation
-       bidirectionnelle  │                │   bidirectionnelle
-                         ▼                ▼
-     ┌───────────────────────┐        ┌───────────────────────┐
-     │  AdminDashboard.jsx   │        │  MobileSimulator.jsx  │
-     │  (Portail Superviseur)│        │ (Simulateur Employé)  │
-     └───────────────────────┘        └───────────────────────┘
-                         │                │
-                         ▼                ▼
-                 ┌────────────────────────────────┐
-                 │          localStorage          │
-                 │   (Simul. Base de données)     │
-                 └────────────────────────────────┘
+             ┌──────────────────────────────────────┐
+             │       Frontend Client (Portail)      │
+             │             (Vite/React)             │
+             └──────┬────────────────────────▲──────┘
+                    │                        │
+       Requêtes API │                        │ Synchronisation
+       HTTP REST    │                        │ Temps Réel
+                    ▼                        │ (Mise à jour d'état)
+             ┌───────────────────────────────┴──────┐
+             │         Backend API                  │
+             │       (Node.js/Express)              │
+             └──────┬────────────────────────▲──────┘
+                    │                        │
+     Lecture/Écriture│                        │ Données Sérialisées
+       via Prisma   │                        │ (Employees/Clients)
+                    ▼                        │
+             ┌───────────────────────────────┴──────┐
+             │     Base de données SQL              │
+             │           (SQLite)                   │
+             └──────────────────────────────────────┘
 ```
 
-### 1. Gestion de l'État Local (`App.jsx`)
-L'état de l'application est maintenu au niveau supérieur afin de permettre une communication instantanée entre l'administration et le mobile :
-* `clients` : Tableau des fiches clients avec leurs positions GPS (Abidjan).
-* `employees` : Profils des techniciens et de l'administrateur, incluant leurs coordonnées GPS en temps réel.
-* `operations` : Liste des interventions planifiées ou en cours avec liaisons `clientId` et `employeeId`.
+### 1. Gestion de l'État et Appels API (`src/App.jsx`)
+L'état de l'application (clients, techniciens, interventions) est géré au niveau racine de l'application frontend. Au chargement, le client effectue des requêtes HTTP asynchrones `fetch()` pour récupérer les données.
+* Les modifications d'état (création d'un client, assignation de mission, mise à jour de statut, ou déplacements GPS) effectuent des requêtes `POST`, `PUT` vers le backend Express.
 
-### 2. Persistance des Données (Simulateur PostgreSQL/PostGIS)
-Pour simuler la base de données, toutes les modifications (ajout de client, planification d'intervention, déplacement GPS d'un technicien, mise à jour de statut) sont automatiquement sauvegardées et rechargées depuis le **`localStorage`** du navigateur. Le rechargement de la page conserve l'historique de vos tests.
+### 2. Couche Backend API (`server.js`)
+Le serveur Express sert d'intermédiaire logique pour le frontend. Il expose des points de terminaison REST sécurisés pour :
+* **Les clients** (`/api/clients`) : liste, création, modification, archivage.
+* **Les employés/techniciens** (`/api/employees`) : liste, mise à jour des positions GPS.
+* **Les opérations/interventions** (`/api/operations`) : liste, création, mise à jour du statut.
+* **Géocodage centralisé** : Le serveur gère la simulation de géocodage pour attribuer des coordonnées valides à Abidjan à partir de l'adresse fournie par l'utilisateur.
+
+### 3. Couche d'Accès aux Données & SQL Database (Prisma ORM)
+* **ORM** : **Prisma** (v5.22.0) est configuré pour gérer le schéma de base de données.
+* **Base de données** : Une base de données locale **SQLite** (`prisma/dev.db`) stocke les données des employés, des clients et des opérations.
+* **Seeding** : Un script de peuplement (`prisma/seed.js`) initialise la base de données SQL avec les profils ivoiriens par défaut pour YA CONSULTING.
 
 ---
 
 ## 🛠️ Stack Technique Réelle du Prototype
 
-* **Framework** : React 19 (Vite)
-* **Cartographie** : **Leaflet** (intégration directe via API DOM `window.L` pour une compatibilité parfaite avec React 19 et le rendu de cartes fluides à 60 fps).
-* **Fonds de cartes** : OpenStreetMap (Standard et CartoDB Voyager).
-* **Styles et Design System** : CSS Variables (Vanilla CSS) avec prise en charge native des thèmes Clair et Sombre, effets de glassmorphisme et animations de transition de composants.
-* **Icônes** : Lucide React.
+* **Frontend** : React 19 (Vite)
+* **Système de Design Frontend** : **Material UI (MUI)** avec intégration d'icônes Material Design (`@mui/icons-material`).
+* **Cartographie** : **Leaflet** (importé et géré de manière native).
+* **Serveur Backend** : Node.js avec le framework **Express** et configuration **CORS**.
+* **Base de données** : **SQLite** avec **Prisma Client**.
+* **Lanceur Concomitant** : `concurrently` (démarre l'API backend et le client frontend ensemble via `npm run dev:all`).
 
 ---
 
@@ -55,16 +65,16 @@ Pour simuler la base de données, toutes les modifications (ajout de client, pla
 Voici comment chaque point clé des spécifications fonctionnelles (Section 3 du Cahier des Charges) est adressé :
 
 ### 3.1 Authentification et Gestion des Profils
-* **Simulé** : L'écran initial du simulateur mobile propose de choisir un compte technicien (Koffi Kouadio ou Aminata Diallo). L'avatar en haut à droite indique l'identité de l'utilisateur actif. Le bouton de déconnexion permet de changer d'identité.
+* **Simulé** : L'écran initial du simulateur mobile propose de choisir un compte technicien (Koffi Kouadio ou Aminata Diallo) stockés dans la base SQLite. L'avatar en haut à droite indique l'identité de l'utilisateur actif. Le bouton de déconnexion permet de changer d'identité.
 
 ### 3.2 Gestion des Clients (CRUD)
-* **Implémenté** : L'onglet "Clients" du dashboard admin permet d'afficher la table complète des clients.
-* **Géocodage automatique** : Lors de la soumission d'une adresse dans le formulaire de création, le script `simulateGeocode` calcule une coordonnée GPS à partir d'un hachage de la chaîne de caractères (autour du centre d'Abidjan).
-* **Alertes géocodage** : Si l'adresse est trop courte ou absente, une alerte d'erreur s'affiche dans le formulaire. En cas de succès, les coordonnées exactes sont affichées avant enregistrement.
+* **Implémenté** : L'onglet "Clients" du dashboard admin en Material UI permet d'afficher la table complète des clients.
+* **Géocodage automatique** : Lors de la soumission d'une adresse dans le formulaire de création, l'API Express calcule une coordonnée GPS à partir d'un hachage de la chaîne de caractères (autour du centre d'Abidjan).
+* **Alertes géocodage** : Si l'adresse est trop courte ou absente, une alerte d'erreur MUI s'affiche dans le formulaire. En cas de succès, les coordonnées exactes sont affichées avant enregistrement dans la base SQLite.
 
 ### 3.3 Gestion des Opérations
 * **Implémenté** : Création d'interventions reliant un client, une description technique, une date d'intervention et un technicien.
-* **Statuts** : Les badges dynamiques reflètent l'état (« planifiée », « en cours », « terminée »).
+* **Statuts** : Les badges dynamiques reflètent l'état (« planifiée », « en cours », « terminée », « annulée »).
 * **Ciblage mobile** : Seules les opérations assignées au technicien connecté et n'étant pas terminées s'affichent sur sa carte ou dans sa liste mobile.
 
 ### 3.4 Application Mobile — Carte et Itinéraire
@@ -76,4 +86,4 @@ Voici comment chaque point clé des spécifications fonctionnelles (Section 3 du
 
 ### 3.5 Supervision Cartographique Administrateur
 * **Implémenté** : L'onglet "Supervision Carte" côté administration affiche sur une carte globale les clients actifs et les icônes de techniciens en temps réel.
-* **Mise à jour en temps réel** : Si vous cliquez sur "Simuler trajet GPS" dans le panneau mobile, vous verrez le technicien se déplacer pas-à-pas vers son lieu d'intervention. En regardant simultanément l'écran de supervision administrateur à gauche, vous constaterez que sa position s'y déplace à la même vitesse !
+* **Mise à jour en temps réel** : Si vous cliquez sur "Simuler trajet GPS" dans le panneau mobile, le technicien se déplace pas-à-pas vers son lieu d'intervention. En regardant simultanément l'écran de supervision administrateur à gauche, sa position s'y déplace à la même vitesse !

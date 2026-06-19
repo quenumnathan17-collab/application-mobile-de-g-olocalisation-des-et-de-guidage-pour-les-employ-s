@@ -1,50 +1,56 @@
-# Walkthrough — Application de Géolocalisation & Guidage (Découplage V2 - Abidjan)
+# Walkthrough — Application de Géolocalisation & Guidage (V3 - Prisma & Material UI)
 
-Ce document présente l'architecture finale et découplée implémentée pourYA CONSULTING, intégrant un **véritable serveur Backend API (Node.js/Express)** et un **Frontend réactif (Vite/React)**, tous deux configurés pour la **Côte d'Ivoire**.
-
----
-
-## 🚀 Lancement & Accès Rapide
-
-Les deux serveurs démarrent ensemble avec une seule commande :
-```bash
-npm run dev:all
-```
-* **Frontend Client (Vite/React)** : Accessible sur **[http://localhost:5173/](http://localhost:5173/)**
-* **Backend API (Node.js/Express)** : Écoute sur **[http://localhost:3001/](http://localhost:3001/)**
-
-> [!NOTE]
-> Le serveur de développement de Vite intègre un proxy qui redirige automatiquement tous les appels vers `/api/*` du port `5173` vers le port `3001` du backend, évitant ainsi les erreurs de CORS en développement.
+Ce document présente l'architecture finale et les améliorations visuelles et structurelles apportées lors de la **V3** pour **YA CONSULTING**. 
 
 ---
 
-## 🛠️ Restructuration Réalisée (V2)
+## 🚀 Fonctionnalités Majeures de la V3
 
-### 1. Backend API (`server.js`)
-* Fournit des routes REST pour la gestion :
-  * Des clients (`GET /api/clients`, `POST /api/clients`, `PUT /api/clients/:id`)
-  * Des techniciens (`GET /api/employees`, `PUT /api/employees/:id/gps`)
-  * Des interventions (`GET /api/operations`, `POST /api/operations`, `PUT /api/operations/:id/status`)
-* **Géocodage centralisé** : Le serveur gère lui-même la conversion des adresses textuelles en coordonnées GPS dans le périmètre d'Abidjan (Plateau, Cocody, Marcory, etc.).
-* **Base de données persistante (`database.json`)** : Les données sont lues et sauvegardées automatiquement dans un fichier JSON structuré dans votre workspace, simulant le comportement d'une base PostgreSQL/PostGIS.
+### 1. Base de données SQL avec Prisma ORM
+* **Transition technologique** : Nous avons abandonné la persistance sur fichier simple (`database.json`) pour utiliser **Prisma ORM** connecté à une base SQL **SQLite** (`prisma/dev.db`).
+* **Schéma relationnel (`prisma/schema.prisma`)** : Modélisation robuste des tables `Employee`, `Client`, et `Operation` avec des types stricts.
+* **Script de Seeding (`prisma/seed.js`)** : Peuplement automatique de la base SQL avec des techniciens ivoiriens réels, des clients et des coordonnées géo-localisées à Abidjan.
+* **Migration vers PostgreSQL facilitée** : La configuration Prisma permet de basculer sur un serveur PostgreSQL en changeant simplement le provider de `"sqlite"` à `"postgresql"` dans le schéma.
 
-### 2. Frontend React (`src/App.jsx`)
-* Les données ne sont plus gérées en local mais récupérées dynamiquement via des requêtes HTTP asynchrones `fetch()` au montage du composant principal.
-* Lors d'actions de modification (planifier une mission, changer le statut ou bouger le GPS d'un technicien), le frontend communique avec l'API backend Express.
-* **Mise à jour optimiste du GPS** : Les déplacements GPS simulés du technicien mettent à jour le state local de façon instantanée pour garantir des animations de cartes fluides à 60 fps sur l'interface, tout en transmettant la nouvelle position en tâche de fond au serveur backend API.
-
-### 3. Localisation Côte d'Ivoire
-* Utilisation systématique de la locale `fr-CI` pour le formatage des dates d'interventions et de l'horloge du smartphone.
-* Numéros de téléphone à 10 chiffres (norme ivoirienne active depuis 2021).
-* Points GPS calés sur Abidjan et communes environnantes (Yopougon, Marcory, Cocody, Plateau).
+### 2. Dashboard Web modernisé avec Material UI (MUI)
+L'interface d'administration a été entièrement réécrite pour utiliser les composants officiels **Material UI** afin de proposer un rendu professionnel de type SaaS d'entreprise.
+* **Synchronisation Dynamique du Thème** : Un observateur de mutation écoute les changements sur l'attribut `data-theme` du DOM. L'interface MUI passe automatiquement en **mode sombre** ou **mode clair** en phase avec l'interrupteur global du portail.
+* **Composants Premium** :
+  * Navigation moderne via `MuiTabs` et `MuiTab` avec icônes.
+  * Formulaires et dialogues de création (`Dialog`, `TextField`, `Select`, `MenuItem`) parfaitement harmonisés.
+  * Tables interactives stylisées avec effet de survol (`TableRow`, `TableCell`).
+  * Puces de statut (`Chip`) colorées pour suivre l'avancement des interventions.
+  * Alertes visuelles lors du géocodage.
 
 ---
 
-## 📂 Fichiers Livrés & Modifiés
+## 🎥 Démonstration Vidéo & Vérification
 
-* [server.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/server.js) : Serveur backend Node.js en syntaxe ES Modules.
-* [vite.config.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/vite.config.js) : Ajout du bloc de proxying `/api` $\rightarrow$ `3001`.
-* [package.json](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/package.json) : Scripts `"server"` et `"dev:all"`, dépendances `express`, `cors`, `concurrently`.
-* [src/App.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/App.jsx) : Intégration des flux HTTP asynchrones.
-* [src/components/AdminDashboard.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/AdminDashboard.jsx) : Soumission asynchrone du formulaire et formatage locale `fr-CI`.
-* [src/components/MobileSimulator.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/MobileSimulator.jsx) : Formatage horloge locale `fr-CI`.
+Voici l'enregistrement complet de la session de test réalisée par le sous-agent de navigation. Il montre le changement de thème, la navigation entre les onglets et la création réussie d'un nouveau client (géocodé à Abidjan et stocké en base SQL) :
+
+![Enregistrement des tests de l'application](file:///C:/Users/quenu/.gemini/antigravity-ide/brain/6c871afa-ef22-4f37-9d4a-a881c24586dd/mui_dashboard_verify_1781861547756.webp)
+
+---
+
+## 📂 Fichiers Importants du Projet
+
+* [prisma/schema.prisma](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/prisma/schema.prisma) : Définition des modèles de base de données.
+* [prisma/seed.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/prisma/seed.js) : Script de peuplement de la base de données SQL.
+* [server.js](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/server.js) : API Express utilisant le `PrismaClient` pour exécuter les requêtes SQL.
+* [src/components/AdminDashboard.jsx](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/src/components/AdminDashboard.jsx) : Dashboard web entièrement réécrit en Material UI.
+* [package.json](file:///c:/Users/quenu/Downloads/application-mobile-de-g%C3%A9olocalisation-des-clients-et-de-guidage-pour-les-employ%C3%A9s/package.json) : Dépendances Prisma et MUI installées.
+
+---
+
+## 🧪 Validation Technique
+
+### 1. Compilation
+La commande `npm run build` a été exécutée avec succès en 5.05 secondes, confirmant qu'aucun warning React ou import MUI invalide n'est présent.
+
+### 2. Scénario Utilisateur validé
+* **Navigation fluide** : Les onglets Supervision, Clients et Planification s'affichent correctement et réagissent en temps réel.
+* **Géocodage & Persistance SQL** : 
+  * Création du client *Pharmacie de la Rue des Jardins* à l'adresse *Rue des Jardins, Deux Plateaux, Cocody, Abidjan*.
+  * Le serveur Express a intercepté la requête, a simulé le géocodage sur Abidjan et a généré les coordonnées GPS : `5.36494, -4.05792`.
+  * La ligne a été insérée dans la table `Client` du fichier SQLite `prisma/dev.db` via Prisma.
+  * Le tableau s'est rechargé dynamiquement et a affiché le nouveau client dans la liste.
