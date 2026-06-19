@@ -27,7 +27,14 @@ import {
   Badge,
   InputAdornment,
   Grid,
-  Chip
+  Chip,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemAvatar,
+  IconButton
 } from '@mui/material';
 import {
   Map as MapIcon,
@@ -45,7 +52,12 @@ import {
   Lock as LockIcon,
   Business as BusinessIcon,
   Person as PersonIcon,
-  Build as BuildIcon
+  Build as BuildIcon,
+  Close as CloseIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+  Place as PlaceIcon,
+  OpenInNew as OpenInNewIcon
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -67,6 +79,13 @@ export default function AdminDashboard({
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddOp, setShowAddOp] = useState(false);
   
+  // Detail dialogs
+  const [selectedClientDetail, setSelectedClientDetail] = useState(null);
+  const [selectedEmpDetail, setSelectedEmpDetail] = useState(null);
+
+  // Legend filter for supervision map
+  const [legendFilter, setLegendFilter] = useState('all'); // 'all' | 'entreprise' | 'particulier' | 'technicien'
+
   // Form state - Client
   const [newClientName, setNewClientName] = useState('');
   const [newClientType, setNewClientType] = useState('entreprise');
@@ -83,6 +102,25 @@ export default function AdminDashboard({
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
   const markersGroup = useRef(null);
+
+  // Helper: navigate to client tab and highlight a client
+  const navigateToClient = (clientId) => {
+    const client = clients.find(c => c.id === clientId);
+    if (client) {
+      setActiveTab(1);
+      setSearchQuery(client.name);
+    }
+  };
+
+  // Helper: center map on GPS coordinates
+  const centerMapOnGps = (lat, lng) => {
+    if (activeTab !== 0) setActiveTab(0);
+    setTimeout(() => {
+      if (mapInstance.current) {
+        mapInstance.current.setView([lat, lng], 15, { animate: true });
+      }
+    }, 300);
+  };
 
   // Sync theme with index.css theme attribute on HTML tag
   const [currentTheme, setCurrentTheme] = useState(() => {
@@ -263,6 +301,9 @@ export default function AdminDashboard({
     // 1. Plot clients with active operations (planified or in progress)
     clients.forEach(client => {
       if (client.archived) return;
+      if (legendFilter === 'technicien') return; // hide clients when filtering technicians only
+      if (legendFilter === 'entreprise' && client.type !== 'entreprise') return;
+      if (legendFilter === 'particulier' && client.type !== 'particulier') return;
 
       const clientOps = operations.filter(op => op.clientId === client.id && (op.status === 'en cours' || op.status === 'planifiée'));
       if (clientOps.length === 0) return;
@@ -330,6 +371,7 @@ export default function AdminDashboard({
     // 2. Plot employees (technicians)
     employees.forEach(emp => {
       if (emp.role === 'admin') return;
+      if (legendFilter === 'entreprise' || legendFilter === 'particulier') return; // hide techs when filtering clients only
 
       const activeOps = operations.filter(op => op.employeeId === emp.id && op.status === 'en cours');
       const hasActiveOp = activeOps.length > 0;
@@ -398,7 +440,7 @@ export default function AdminDashboard({
       markersGroup.current.addLayer(empMarker);
     });
 
-  }, [activeTab, clients, employees, operations]);
+  }, [activeTab, clients, employees, operations, legendFilter]);
 
   // Filter clients
   const filteredClients = clients.filter(c => {
@@ -458,13 +500,37 @@ export default function AdminDashboard({
                     Carte de supervision globale
                   </Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                    Suivi des techniciens en temps réel et des interventions planifiées ou en cours à Abidjan.
+                    Suivi des techniciens en temps réel et des interventions planifiées ou en cours à Abidjan. Cliquez sur un filtre pour isoler un type de marqueur.
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                  <Chip icon={<BusinessIcon fontSize="small" />} label="🏢 Client Entreprise" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
-                  <Chip icon={<PersonIcon fontSize="small" />} label="👤 Client Particulier" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
-                  <Chip icon={<BuildIcon fontSize="small" />} label="🛠️ Technicien actif" size="small" variant="outlined" sx={{ fontWeight: 600 }} />
+                  <Chip 
+                    icon={<BusinessIcon fontSize="small" />} 
+                    label="🏢 Client Entreprise" 
+                    size="small" 
+                    variant={legendFilter === 'entreprise' ? 'filled' : 'outlined'} 
+                    color={legendFilter === 'entreprise' ? 'primary' : 'default'}
+                    onClick={() => setLegendFilter(legendFilter === 'entreprise' ? 'all' : 'entreprise')} 
+                    sx={{ fontWeight: 600, cursor: 'pointer' }} 
+                  />
+                  <Chip 
+                    icon={<PersonIcon fontSize="small" />} 
+                    label="👤 Client Particulier" 
+                    size="small" 
+                    variant={legendFilter === 'particulier' ? 'filled' : 'outlined'} 
+                    color={legendFilter === 'particulier' ? 'secondary' : 'default'}
+                    onClick={() => setLegendFilter(legendFilter === 'particulier' ? 'all' : 'particulier')} 
+                    sx={{ fontWeight: 600, cursor: 'pointer' }} 
+                  />
+                  <Chip 
+                    icon={<BuildIcon fontSize="small" />} 
+                    label="🛠️ Technicien actif" 
+                    size="small" 
+                    variant={legendFilter === 'technicien' ? 'filled' : 'outlined'} 
+                    color={legendFilter === 'technicien' ? 'success' : 'default'}
+                    onClick={() => setLegendFilter(legendFilter === 'technicien' ? 'all' : 'technicien')} 
+                    sx={{ fontWeight: 600, cursor: 'pointer' }} 
+                  />
                 </Box>
               </Box>
 
@@ -513,15 +579,63 @@ export default function AdminDashboard({
                     }}
                     sx={{ flexGrow: 1, maxWidth: 320 }}
                   />
-                  <FormControl size="small" sx={{ width: 180 }}>
+                  <FormControl size="small" sx={{ width: 200 }}>
                     <Select
                       value={clientTypeFilter}
                       onChange={(e) => setClientTypeFilter(e.target.value)}
+                      displayEmpty
+                      MenuProps={{
+                        PaperProps: {
+                          sx: {
+                            zIndex: 9999,
+                            borderRadius: 2,
+                            mt: 0.5,
+                            boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                            '& .MuiMenuItem-root': {
+                              py: 1.2,
+                              px: 2,
+                              borderRadius: 1,
+                              mx: 0.5,
+                              mb: 0.3,
+                              transition: 'all 0.15s',
+                              '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'white',
+                                transform: 'translateX(4px)',
+                                '& .MuiListItemIcon-root': { color: 'white' }
+                              },
+                              '&.Mui-selected': {
+                                bgcolor: 'primary.light',
+                                fontWeight: 700,
+                                '&:hover': { bgcolor: 'primary.main' }
+                              }
+                            }
+                          }
+                        },
+                        disablePortal: false
+                      }}
+                      sx={{ 
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        '& .MuiSelect-select': { display: 'flex', alignItems: 'center', gap: 1 }
+                      }}
                     >
-                      <MenuItem value="all">Tous les types</MenuItem>
-                      <MenuItem value="entreprise">Entreprises</MenuItem>
-                      <MenuItem value="particulier">Particuliers</MenuItem>
-                      <MenuItem value="archived">Archivés</MenuItem>
+                      <MenuItem value="all">
+                        <ListItemIcon sx={{ minWidth: 28 }}><PeopleIcon fontSize="small" /></ListItemIcon>
+                        Tous les types
+                      </MenuItem>
+                      <MenuItem value="entreprise">
+                        <ListItemIcon sx={{ minWidth: 28 }}><BusinessIcon fontSize="small" color="primary" /></ListItemIcon>
+                        Entreprises
+                      </MenuItem>
+                      <MenuItem value="particulier">
+                        <ListItemIcon sx={{ minWidth: 28 }}><PersonIcon fontSize="small" color="secondary" /></ListItemIcon>
+                        Particuliers
+                      </MenuItem>
+                      <MenuItem value="archived">
+                        <ListItemIcon sx={{ minWidth: 28 }}><ArchiveIcon fontSize="small" color="action" /></ListItemIcon>
+                        Archivés
+                      </MenuItem>
                     </Select>
                   </FormControl>
                 </Box>
@@ -542,13 +656,15 @@ export default function AdminDashboard({
                         <TableRow 
                           key={client.id} 
                           hover 
+                          onClick={() => setSelectedClientDetail(client)}
                           sx={{ 
                             opacity: client.archived ? 0.55 : 1,
-                            transition: 'opacity 0.2s',
+                            transition: 'all 0.2s',
+                            cursor: 'pointer',
                             '&:last-child td, &:last-child th': { border: 0 }
                           }}
                         >
-                          <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+                          <TableCell component="th" scope="row" sx={{ fontWeight: 600, color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
                             {client.name}
                           </TableCell>
                           <TableCell>
@@ -558,14 +674,19 @@ export default function AdminDashboard({
                               size="small"
                               variant={client.type === 'entreprise' ? 'filled' : 'outlined'}
                               color={client.type === 'entreprise' ? 'default' : 'secondary'}
-                              sx={{ fontWeight: 600 }}
+                              onClick={(e) => { e.stopPropagation(); setClientTypeFilter(client.type); }}
+                              sx={{ fontWeight: 600, cursor: 'pointer' }}
                             />
                           </TableCell>
-                          <TableCell>{client.address}</TableCell>
-                          <TableCell sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'text.secondary' }}>
-                            {client.gps.lat.toFixed(5)}, {client.gps.lng.toFixed(5)}
+                          <TableCell sx={{ '&:hover': { color: 'primary.main' } }}>{client.address}</TableCell>
+                          <TableCell 
+                            onClick={(e) => { e.stopPropagation(); centerMapOnGps(client.gps.lat, client.gps.lng); }}
+                            sx={{ fontFamily: 'monospace', fontSize: '0.75rem', color: 'secondary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline', color: 'primary.main' } }}
+                            title="Cliquez pour centrer la carte sur ce client"
+                          >
+                            📍 {client.gps.lat.toFixed(5)}, {client.gps.lng.toFixed(5)}
                           </TableCell>
-                          <TableCell align="right">
+                          <TableCell align="right" onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="outlined"
                               size="small"
@@ -635,11 +756,23 @@ export default function AdminDashboard({
                         const employee = employees.find(e => e.id === op.employeeId);
                         
                         return (
-                          <TableRow key={op.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableRow key={op.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 }, cursor: 'default' }}>
                             <TableCell sx={{ fontWeight: 600 }}>
-                              {client ? client.name : "Inconnu"}
-                              <Typography variant="caption" display="block" sx={{ color: 'text.secondary', fontWeight: 'normal' }}>
-                                {client ? client.address : ""}
+                              <Typography 
+                                component="span" 
+                                sx={{ fontWeight: 600, color: 'primary.main', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+                                onClick={() => client && navigateToClient(client.id)}
+                              >
+                                {client ? client.name : "Inconnu"}
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                display="block" 
+                                sx={{ color: 'text.secondary', fontWeight: 'normal', cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                                onClick={() => client && centerMapOnGps(client.gps.lat, client.gps.lng)}
+                                title="Voir sur la carte"
+                              >
+                                📍 {client ? client.address : ""}
                               </Typography>
                             </TableCell>
                             <TableCell sx={{ maxWidth: '280px', wordBreak: 'break-word' }}>{op.description}</TableCell>
@@ -653,9 +786,13 @@ export default function AdminDashboard({
                             </TableCell>
                             <TableCell>
                               {employee ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Avatar src={employee.avatar} alt={employee.name} sx={{ width: 28, height: 28, border: '1px solid', borderColor: 'divider' }} />
-                                  <Typography variant="body2" sx={{ fontWeight: 500 }}>{employee.name}</Typography>
+                                <Box 
+                                  sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer', '&:hover': { opacity: 0.8 } }}
+                                  onClick={() => setSelectedEmpDetail(employee)}
+                                  title="Voir le profil du technicien"
+                                >
+                                  <Avatar src={employee.avatar} alt={employee.name} sx={{ width: 28, height: 28, border: '2px solid', borderColor: 'primary.light', transition: 'transform 0.2s', '&:hover': { transform: 'scale(1.15)' } }} />
+                                  <Typography variant="body2" sx={{ fontWeight: 500, color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>{employee.name}</Typography>
                                 </Box>
                               ) : "Non assigné"}
                             </TableCell>
@@ -664,20 +801,42 @@ export default function AdminDashboard({
                                 label={op.status} 
                                 size="small" 
                                 color={getStatusChipColor(op.status)}
-                                sx={{ fontWeight: 600, textTransform: 'capitalize' }}
+                                onClick={() => {}}
+                                sx={{ fontWeight: 600, textTransform: 'capitalize', cursor: 'default' }}
                               />
                             </TableCell>
                             <TableCell>
-                              <FormControl size="small" sx={{ width: 140 }}>
+                              <FormControl size="small" sx={{ width: 160 }}>
                                 <Select 
                                   value={op.status}
                                   onChange={(e) => updateOperationStatus(op.id, e.target.value)}
-                                  sx={{ fontSize: '0.8125rem' }}
+                                  MenuProps={{
+                                    PaperProps: {
+                                      sx: {
+                                        zIndex: 9999,
+                                        borderRadius: 2,
+                                        mt: 0.5,
+                                        boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                                        '& .MuiMenuItem-root': {
+                                          py: 1,
+                                          px: 2,
+                                          borderRadius: 1,
+                                          mx: 0.5,
+                                          mb: 0.3,
+                                          transition: 'all 0.15s',
+                                          '&:hover': {
+                                            transform: 'translateX(4px)',
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }}
+                                  sx={{ fontSize: '0.8125rem', borderRadius: 2, fontWeight: 600 }}
                                 >
-                                  <MenuItem value="planifiée">Planifiée</MenuItem>
-                                  <MenuItem value="en cours">En cours</MenuItem>
-                                  <MenuItem value="terminée">Terminée</MenuItem>
-                                  <MenuItem value="annulée">Annulée</MenuItem>
+                                  <MenuItem value="planifiée">📋 Planifiée</MenuItem>
+                                  <MenuItem value="en cours">⚡ En cours</MenuItem>
+                                  <MenuItem value="terminée">✅ Terminée</MenuItem>
+                                  <MenuItem value="annulée">❌ Annulée</MenuItem>
                                 </Select>
                               </FormControl>
                             </TableCell>
@@ -837,6 +996,213 @@ export default function AdminDashboard({
             </DialogActions>
           </form>
         </Dialog>
+
+        {/* DIALOG: CLIENT DETAIL */}
+        <Dialog 
+          open={!!selectedClientDetail} 
+          onClose={() => setSelectedClientDetail(null)} 
+          maxWidth="sm" 
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          {selectedClientDetail && (() => {
+            const client = selectedClientDetail;
+            const clientOps = operations.filter(op => op.clientId === client.id);
+            return (
+              <>
+                <DialogTitle sx={{ fontWeight: 700, pb: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Avatar sx={{ bgcolor: client.type === 'entreprise' ? 'primary.main' : 'secondary.main', width: 40, height: 40 }}>
+                      {client.type === 'entreprise' ? <BusinessIcon /> : <PersonIcon />}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>{client.name}</Typography>
+                      <Chip 
+                        label={client.type === 'entreprise' ? 'Entreprise' : 'Particulier'} 
+                        size="small" 
+                        color={client.type === 'entreprise' ? 'primary' : 'secondary'}
+                        sx={{ fontWeight: 600, mt: 0.3 }}
+                      />
+                    </Box>
+                  </Box>
+                  <IconButton onClick={() => setSelectedClientDetail(null)}>
+                    <CloseIcon />
+                  </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 2 }}>
+                  <List dense disablePadding>
+                    <ListItem 
+                      sx={{ px: 0, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }, borderRadius: 1 }}
+                      onClick={() => { centerMapOnGps(client.gps.lat, client.gps.lng); setSelectedClientDetail(null); }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}><PlaceIcon color="error" /></ListItemIcon>
+                      <ListItemText 
+                        primary={client.address} 
+                        secondary={`GPS: ${client.gps.lat.toFixed(5)}, ${client.gps.lng.toFixed(5)} — Cliquer pour voir sur la carte`}
+                      />
+                    </ListItem>
+                  </List>
+
+                  <Divider sx={{ my: 2 }} />
+                  
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>
+                    Opérations ({clientOps.length})
+                  </Typography>
+
+                  {clientOps.length === 0 ? (
+                    <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic', py: 2, textAlign: 'center' }}>
+                      Aucune opération pour ce client.
+                    </Typography>
+                  ) : (
+                    <List dense disablePadding>
+                      {clientOps.map(op => {
+                        const emp = employees.find(e => e.id === op.employeeId);
+                        return (
+                          <ListItem 
+                            key={op.id} 
+                            sx={{ px: 1, py: 1, mb: 0.5, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider', cursor: 'pointer', '&:hover': { borderColor: 'primary.main' } }}
+                            onClick={() => { setSelectedClientDetail(null); setActiveTab(2); }}
+                          >
+                            <ListItemText 
+                              primary={
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 600 }}>{op.description}</Typography>
+                                  <Chip label={op.status} size="small" color={getStatusChipColor(op.status)} sx={{ fontWeight: 600, textTransform: 'capitalize', ml: 1 }} />
+                                </Box>
+                              }
+                              secondary={
+                                <Box sx={{ display: 'flex', gap: 2, mt: 0.5 }}>
+                                  <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                    <CalendarTodayIcon sx={{ fontSize: 12 }} /> {new Date(op.date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                  </Typography>
+                                  {emp && (
+                                    <Typography variant="caption" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                      <BuildIcon sx={{ fontSize: 12 }} /> {emp.name}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              }
+                            />
+                          </ListItem>
+                        );
+                      })}
+                    </List>
+                  )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    color={client.archived ? 'primary' : 'inherit'}
+                    onClick={() => { updateClient({ ...client, archived: !client.archived }); setSelectedClientDetail(null); }}
+                    startIcon={client.archived ? <UnarchiveIcon /> : <ArchiveIcon />}
+                  >
+                    {client.archived ? 'Restaurer' : 'Archiver'}
+                  </Button>
+                  <Button variant="contained" onClick={() => setSelectedClientDetail(null)}>Fermer</Button>
+                </DialogActions>
+              </>
+            );
+          })()}
+        </Dialog>
+
+        {/* DIALOG: EMPLOYEE DETAIL */}
+        <Dialog 
+          open={!!selectedEmpDetail} 
+          onClose={() => setSelectedEmpDetail(null)} 
+          maxWidth="xs" 
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          {selectedEmpDetail && (() => {
+            const emp = selectedEmpDetail;
+            const empOps = operations.filter(op => op.employeeId === emp.id);
+            const activeOps = empOps.filter(op => op.status === 'en cours');
+            const completedOps = empOps.filter(op => op.status === 'terminée');
+            return (
+              <>
+                <DialogTitle sx={{ pb: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Badge 
+                      badgeContent={activeOps.length > 0 ? '●' : ''} 
+                      color="success" 
+                      overlap="circular"
+                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    >
+                      <Avatar src={emp.avatar} alt={emp.name} sx={{ width: 56, height: 56, border: '3px solid', borderColor: 'primary.light' }} />
+                    </Badge>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
+                      <Chip 
+                        label={emp.role === 'admin' ? 'Administrateur' : 'Technicien'} 
+                        size="small" 
+                        color={emp.role === 'admin' ? 'warning' : 'info'}
+                        sx={{ fontWeight: 600, mt: 0.3 }}
+                      />
+                    </Box>
+                  </Box>
+                  <IconButton onClick={() => setSelectedEmpDetail(null)}>
+                    <CloseIcon />
+                  </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ pt: 2 }}>
+                  <List dense disablePadding>
+                    <ListItem sx={{ px: 0 }}>
+                      <ListItemIcon sx={{ minWidth: 36 }}><PhoneIcon color="primary" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary={emp.phone} secondary="Téléphone" />
+                    </ListItem>
+                    <ListItem 
+                      sx={{ px: 0, cursor: 'pointer', '&:hover': { bgcolor: 'action.hover' }, borderRadius: 1 }}
+                      onClick={() => { centerMapOnGps(emp.gps.lat, emp.gps.lng); setSelectedEmpDetail(null); }}
+                    >
+                      <ListItemIcon sx={{ minWidth: 36 }}><PlaceIcon color="error" fontSize="small" /></ListItemIcon>
+                      <ListItemText primary={`${emp.gps.lat.toFixed(5)}, ${emp.gps.lng.toFixed(5)}`} secondary="Voir la position actuelle sur la carte" />
+                    </ListItem>
+                  </List>
+
+                  <Divider sx={{ my: 1.5 }} />
+
+                  <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', py: 1 }}>
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: 'primary.main' }}>{empOps.length}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total missions</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: 'warning.main' }}>{activeOps.length}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>En cours</Typography>
+                    </Box>
+                    <Divider orientation="vertical" flexItem />
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Typography variant="h5" sx={{ fontWeight: 800, color: 'success.main' }}>{completedOps.length}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>Terminées</Typography>
+                    </Box>
+                  </Box>
+
+                  {activeOps.length > 0 && (
+                    <>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.secondary' }}>Missions en cours</Typography>
+                      {activeOps.map(op => {
+                        const opClient = clients.find(c => c.id === op.clientId);
+                        return (
+                          <Box key={op.id} sx={{ p: 1.5, mb: 0.5, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider', cursor: 'pointer', '&:hover': { borderColor: 'warning.main' } }} onClick={() => { setSelectedEmpDetail(null); setActiveTab(2); }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{op.description}</Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>📍 {opClient?.name || 'Inconnu'} — {opClient?.address || ''}</Typography>
+                          </Box>
+                        );
+                      })}
+                    </>
+                  )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2.5, pt: 1 }}>
+                  <Button variant="contained" onClick={() => setSelectedEmpDetail(null)}>Fermer</Button>
+                </DialogActions>
+              </>
+            );
+          })()}
+        </Dialog>
+
       </Box>
     </ThemeProvider>
   );
