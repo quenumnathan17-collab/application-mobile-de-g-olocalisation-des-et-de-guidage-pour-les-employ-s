@@ -21,6 +21,7 @@ model Employee {
   workingHoursStart String
   workingHoursEnd   String
   avatar            String
+  password          String @default("")
 }
 
 model Client {

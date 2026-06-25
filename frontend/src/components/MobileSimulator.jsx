@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import L from 'leaflet';
+import 'leaflet-routing-machine';
 import { 
   LogOut, Map, List, Navigation, Clock, 
   WifiOff, Search, Compass, ChevronRight, 
@@ -15,12 +16,37 @@ export default function MobileSimulator({
   updateOperationStatus,
   updateEmployeeGps,
   addNotification,
-  layoutMode
+  layoutMode,
+  theme
 }) {
+  const getArrivalTime = (durationMinutes) => {
+    const now = new Date();
+    const mins = Math.round(parseFloat(durationMinutes) || 0);
+    now.setMinutes(now.getMinutes() + mins);
+    return now.toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const [mobileTab, setMobileTab] = useState('map'); // 'map', 'list'
   const [selectedOp, setSelectedOp] = useState(null);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
+  
+  // Real-Time Clock for simulated smartphone
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const clockTimer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 15000); // update clock every 15s
+    return () => clearInterval(clockTimer);
+  }, []);
+
+  // Auto-calculate route if selected operation is in progress
+  useEffect(() => {
+    if (selectedOp && selectedOp.status === 'en cours' && !routeInfo) {
+      handleCalculateRoute(selectedOp);
+    }
+  }, [selectedOp, routeInfo]);
   
   // Offline Simulation
   const [isOffline, setIsOffline] = useState(false);
@@ -28,6 +54,13 @@ export default function MobileSimulator({
 
   // External GPS launch simulator modal
   const [showGpsChooser, setShowGpsChooser] = useState(false);
+
+  // Search and Filter State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterToday, setFilterToday] = useState(false);
+
+  // Real GPS State
+  const [realGps, setRealGps] = useState(null);
 
   // GPS Movement Simulation
   const [isSimulatingMovement, setIsSimulatingMovement] = useState(false);
@@ -38,9 +71,11 @@ export default function MobileSimulator({
   const mapInstance = useRef(null);
   const markersGroup = useRef(null);
   const routeLayer = useRef(null);
+  const routingControl = useRef(null);
 
   // Active employee object
   const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+
 
   // Calculate distance between two GPS coordinates in km
   const getDistance = (gps1, gps2) => {
@@ -85,10 +120,32 @@ export default function MobileSimulator({
     setRouteInfo(null);
   };
 
+  // Real GPS tracking
+  useEffect(() => {
+    if (!activeEmployeeId) return;
+
+    if ("geolocation" in navigator) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setRealGps({ lat: latitude, lng: longitude });
+          updateEmployeeGps(activeEmployeeId, { lat: latitude, lng: longitude });
+        },
+        (error) => {
+          console.warn("GPS Réel indisponible, fallback au GPS de test", error);
+        },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 }
+      );
+      return () => navigator.geolocation.clearWatch(watchId);
+    }
+  }, [activeEmployeeId]);
+
+  const currentGps = realGps || activeEmployee?.gps;
+
   // Center map on technician position
   const handleCenterMap = () => {
-    if (mapInstance.current && activeEmployee?.gps) {
-      mapInstance.current.setView([activeEmployee.gps.lat, activeEmployee.gps.lng], 14);
+    if (mapInstance.current && currentGps) {
+      mapInstance.current.setView([currentGps.lat, currentGps.lng], 14);
     }
   };
 
@@ -102,24 +159,56 @@ export default function MobileSimulator({
     const client = clients.find(c => c.id === op.clientId);
     if (!client || !activeEmployee) return;
 
-    const start = activeEmployee.gps;
+    const start = currentGps;
     const end = client.gps;
 
-    // Calculate distance and approximate duration (avg speed 30km/h in city)
-    const distance = getDistance(start, end);
-    const duration = Math.round((distance / 30) * 60) + 2; // in minutes
-
-    const routePoints = getRouteCoords(start, end);
-    setRoutePolyline(routePoints);
-    setRouteInfo({
-      distance: distance.toFixed(1),
-      duration: duration
-    });
-
-    addNotification({
-      title: "Itinéraire calculé",
-      body: `Trajet vers ${client.name} : ${distance.toFixed(1)} km, env. ${duration} min`
-    });
+    // Calculate real route using leaflet-routing-machine
+    if (routingControl.current) {
+      routingControl.current.setWaypoints([
+        L.latLng(start.lat, start.lng),
+        L.latLng(end.lat, end.lng)
+      ]);
+      
+      routingControl.current.on('routesfound', function(e) {
+        const routes = e.routes;
+        const summary = routes[0].summary;
+        const distKm = (summary.totalDistance / 1000).toFixed(1);
+        const timeMin = Math.round(summary.totalTime / 60);
+        
+        setRouteInfo({
+          distance: distKm,
+          duration: timeMin
+        });
+        
+        addNotification({
+          title: "Itinéraire calculé",
+          body: `Trajet vers ${client.name} : ${distKm} km, env. ${timeMin} min`
+        });
+      });
+      
+      routingControl.current.on('routingerror', function(e) {
+        console.error("Erreur de routage OSRM:", e);
+        // Fallback to zigzag if network fails
+        const distance = getDistance(start, end);
+        const duration = Math.round((distance / 30) * 60) + 2;
+        setRoutePolyline(getRouteCoords(start, end));
+        setRouteInfo({ distance: distance.toFixed(1), duration });
+        addNotification({
+          title: "Itinéraire calculé (dégradé)",
+          body: `Trajet vers ${client.name} : ${distance.toFixed(1)} km, env. ${duration} min`
+        });
+      });
+    } else {
+      // Fallback
+      const distance = getDistance(start, end);
+      const duration = Math.round((distance / 30) * 60) + 2;
+      setRoutePolyline(getRouteCoords(start, end));
+      setRouteInfo({ distance: distance.toFixed(1), duration });
+      addNotification({
+        title: "Itinéraire calculé",
+        body: `Trajet vers ${client.name} : ${distance.toFixed(1)} km, env. ${duration} min`
+      });
+    }
   };
 
   // Trigger simulated external GPS navigation
@@ -145,6 +234,14 @@ export default function MobileSimulator({
       setSelectedOp(null);
       setRoutePolyline(null);
       setRouteInfo(null);
+      if (routingControl.current) {
+        routingControl.current.setWaypoints([]);
+      }
+    } else if (newStatus === 'en cours' && op) {
+      // Auto-calculate route on start
+      setTimeout(() => {
+        handleCalculateRoute(op);
+      }, 300);
     }
   };
 
@@ -207,21 +304,36 @@ export default function MobileSimulator({
 
   // Leaflet map initialization
   useEffect(() => {
-    if (!activeEmployeeId || mobileTab !== 'map' || !mapRef.current) return;
+    if (!activeEmployeeId || !activeEmployee || mobileTab !== 'map' || !mapRef.current) return;
 
     // Initialize Map centered on employee
     mapInstance.current = L.map(mapRef.current, {
       zoomControl: false, // Cleaner UI
       attributionControl: false // Minimalist phone UI
-    }).setView([activeEmployee.gps.lat, activeEmployee.gps.lng], 13);
+    }).setView([currentGps.lat, currentGps.lng], 13);
 
-    // Dark styled map or standard OpenStreetMap
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19
+    // Always use standard light voyager tile layer
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+    L.tileLayer(tileUrl, {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     }).addTo(mapInstance.current);
 
     markersGroup.current = L.layerGroup().addTo(mapInstance.current);
     routeLayer.current = L.layerGroup().addTo(mapInstance.current);
+
+    // Initialize Routing Control
+    routingControl.current = L.Routing.control({
+      waypoints: [],
+      routeWhileDragging: false,
+      show: false, // hide the instructions panel
+      addWaypoints: false,
+      fitSelectedRoutes: true,
+      createMarker: () => null, // don't add default start/end markers
+      lineOptions: {
+        styles: [{ color: '#4f46e5', weight: 6, opacity: 0.8 }]
+      }
+    }).addTo(mapInstance.current);
 
     return () => {
       if (mapInstance.current) {
@@ -229,7 +341,7 @@ export default function MobileSimulator({
         mapInstance.current = null;
       }
     };
-  }, [activeEmployeeId, mobileTab]);
+  }, [activeEmployeeId, mobileTab, theme]);
 
   // Invalidate map size when mobileTab or layoutMode changes
   useEffect(() => {
@@ -242,7 +354,7 @@ export default function MobileSimulator({
 
   // Redraw Mobile Map markers and routes
   useEffect(() => {
-    if (!activeEmployeeId || mobileTab !== 'map' || !mapInstance.current || !markersGroup.current) return;
+    if (!activeEmployeeId || !activeEmployee || mobileTab !== 'map' || !mapInstance.current || !markersGroup.current) return;
 
     // Clear previous
     markersGroup.current.clearLayers();
@@ -255,7 +367,7 @@ export default function MobileSimulator({
       </div>
     `;
 
-    const techMarker = L.marker([activeEmployee.gps.lat, activeEmployee.gps.lng], {
+    const techMarker = L.marker([currentGps.lat, currentGps.lng], {
       icon: L.divIcon({
         html: techMarkerHtml,
         className: '',
@@ -266,9 +378,15 @@ export default function MobileSimulator({
     markersGroup.current.addLayer(techMarker);
 
     // 2. Client markers
+    const today = new Date().toISOString().split('T')[0];
     const assignedOps = operations.filter(
       op => op.employeeId === activeEmployeeId && (op.status === 'en cours' || op.status === 'planifiée')
-    );
+    ).filter(op => {
+      if (filterToday && op.date !== today) return false;
+      const client = clients.find(c => c.id === op.clientId);
+      if (searchQuery && client && !client.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+      return true;
+    });
 
     assignedOps.forEach(op => {
       const client = clients.find(c => c.id === op.clientId);
@@ -321,14 +439,63 @@ export default function MobileSimulator({
 
       // Fit map to show both markers
       mapInstance.current.fitBounds(poly.getBounds(), { padding: [40, 40] });
+    } else if (assignedOps.length > 0) {
+      const bounds = L.latLngBounds([currentGps.lat, currentGps.lng]);
+      assignedOps.forEach(op => {
+        const client = clients.find(c => c.id === op.clientId);
+        if (client) {
+          bounds.extend([client.gps.lat, client.gps.lng]);
+        }
+      });
+      mapInstance.current.fitBounds(bounds, { padding: [40, 40] });
+    } else {
+      mapInstance.current.setView([currentGps.lat, currentGps.lng], 13);
     }
 
-  }, [activeEmployeeId, mobileTab, operations, clients, routePolyline, activeEmployee?.gps]);
+  }, [activeEmployeeId, mobileTab, operations, clients, routePolyline, currentGps, searchQuery, filterToday]);
 
   // List of active interventions for list tab
   const activeJobs = operations.filter(
     op => op.employeeId === activeEmployeeId && (op.status === 'en cours' || op.status === 'planifiée')
   );
+
+  if (activeEmployeeId && !activeEmployee) {
+    return (
+      <div className="mobile-pane">
+        <div className="simulator-label">
+          <Compass size={16} /> Simulateur Mobile Employé
+        </div>
+        <div className="smartphone-frame">
+          <div className="phone-notch"></div>
+          <div className="phone-status-bar">
+            <span>{currentTime.toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' })}</span>
+            <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
+              <span>100% 🔋</span>
+            </div>
+          </div>
+          <div className="phone-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: '#f8fafc' }}>
+            <div style={{ textAlign: 'center', color: '#64748b' }}>
+              <div style={{
+                width: '24px',
+                height: '24px',
+                border: '3px solid #cbd5e1',
+                borderTopColor: '#4f46e5',
+                borderRadius: '50%',
+                margin: '0 auto 0.8rem auto',
+                animation: 'spin 1s linear infinite'
+              }}></div>
+              <style>{`
+                @keyframes spin {
+                  to { transform: rotate(360deg); }
+                }
+              `}</style>
+              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Chargement du profil...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mobile-pane">
@@ -366,7 +533,7 @@ export default function MobileSimulator({
               
               <div className="technician-selector-list">
                 <p style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', marginBottom: '0.25rem', textAlign: 'left' }}>
-                  SÉLECTIONNEZ UN COMPTE EMPLOYÉ :
+                  QUI ÊTES-VOUS AUJOURD'HUI ?
                 </p>
                 {employees.filter(e => e.role === 'employee').map(emp => (
                   <div 
@@ -388,11 +555,11 @@ export default function MobileSimulator({
             /* 2. ACTIVE APPLICATION APP */
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
               <div className="mobile-app-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <img src={activeEmployee.avatar} alt={activeEmployee.name} style={{ width: '32px', height: '32px', borderRadius: '50%', border: '2px solid white' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img src={activeEmployee.avatar} alt={activeEmployee.name} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '0.75rem', opacity: 0.8 }}>Bonjour,</div>
-                    <div style={{ fontSize: '0.875rem', fontWeight: 700 }}>{activeEmployee.name.split(' ')[0]}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: 800 }}>Vos missions du jour</div>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>{activeEmployee.name}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -421,6 +588,71 @@ export default function MobileSimulator({
                   <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                     <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
+                    {/* Search and Filters Overlay */}
+                    <div style={{ position: 'absolute', top: 10, left: 10, right: 50, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div className="mobile-search-container">
+                        <Search size={16} className="mobile-search-icon" />
+                        <input 
+                          type="text" 
+                          placeholder="Où devez-vous aller ?" 
+                          value={searchQuery}
+                          onChange={e => setSearchQuery(e.target.value)}
+                          className="mobile-search-input"
+                        />
+                      </div>
+
+                      {/* Dropdown de recherche (Résultats) */}
+                      {searchQuery && (
+                        <div className="mobile-search-dropdown">
+                          {(() => {
+                            const results = activeJobs.filter(op => {
+                              const client = clients.find(c => c.id === op.clientId);
+                              return client && client.name.toLowerCase().includes(searchQuery.toLowerCase());
+                            });
+
+                            if (results.length === 0) {
+                              return <div style={{ padding: '0.75rem', fontSize: '0.8rem', color: '#64748b', textAlign: 'center' }}>Aucun client trouvé</div>;
+                            }
+
+                            return results.map(op => {
+                              const client = clients.find(c => c.id === op.clientId);
+                              return (
+                                <div 
+                                  key={op.id}
+                                  className="mobile-search-dropdown-item"
+                                  onClick={() => {
+                                    setSelectedOp(op);
+                                    setSearchQuery(''); // Clear search to hide dropdown
+                                    if (mapInstance.current && client) {
+                                      mapInstance.current.setView([client.gps.lat, client.gps.lng], 15);
+                                    }
+                                  }}
+                                >
+                                  <div className="mobile-search-dropdown-item-title">{client?.name}</div>
+                                  <div className="mobile-search-dropdown-item-desc">
+                                    {op.description}
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                      )}
+
+                      <div className="mobile-filter-container">
+                        <input 
+                          type="checkbox" 
+                          id="filterToday"
+                          checked={filterToday}
+                          onChange={e => setFilterToday(e.target.checked)}
+                          className="mobile-filter-checkbox"
+                        />
+                        <label htmlFor="filterToday" className="mobile-filter-label">
+                          Aujourd'hui
+                        </label>
+                      </div>
+                    </div>
+
                     {/* Bottom sheet for operation detail */}
                     {selectedOp && (
                       <div className={`mobile-bottom-sheet ${selectedOp ? 'open' : ''}`}>
@@ -442,23 +674,28 @@ export default function MobileSimulator({
                         </div>
 
                         {routeInfo && (
-                          <div style={{ 
-                            display: 'flex', 
-                            gap: '1rem', 
-                            backgroundColor: '#f8fafc', 
-                            padding: '0.5rem 0.75rem', 
-                            borderRadius: '8px',
-                            fontSize: '0.75rem',
-                            marginBottom: '0.75rem',
-                            border: '1px dashed #cbd5e1'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                              <Compass size={14} style={{ color: 'var(--primary)' }} />
-                              <strong>{routeInfo.distance} km</strong>
+                          <div className="sheet-route-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', marginBottom: '1rem', border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', backgroundColor: 'var(--bg-app)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                              <div className="sheet-route-info-item">
+                                <Compass size={14} style={{ color: 'var(--primary)' }} />
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Distance : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.distance} km</strong></span>
+                              </div>
+                              <div className="sheet-route-info-item">
+                                <Clock size={14} style={{ color: 'var(--primary)' }} />
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Temps restant : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.duration} min</strong></span>
+                              </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                              <Clock size={14} style={{ color: 'var(--primary)' }} />
-                              <strong>{routeInfo.duration} min</strong>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '0.625rem' }}>
+                              <div className="sheet-route-info-item">
+                                <span style={{ marginRight: '6px', fontSize: '1rem' }}>🏁</span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Arrivée estimée : <strong style={{ color: '#10b981', fontSize: '0.875rem' }}>{getArrivalTime(routeInfo.duration)}</strong></span>
+                              </div>
+                              <div className="sheet-route-info-item">
+                                <span style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
+                                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
+                                  Trafic fluide
+                                </span>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -502,6 +739,15 @@ export default function MobileSimulator({
                           )}
                           {routePolyline && (
                             <button 
+                              className="btn btn-primary"
+                              style={{ padding: '0.5rem', backgroundColor: '#3b82f6' }}
+                              onClick={() => setShowGpsChooser(true)}
+                            >
+                              <ExternalLink size={16} style={{ display: 'inline', marginRight: 4, verticalAlign: 'text-bottom' }} /> Naviguer
+                            </button>
+                          )}
+                          {routePolyline && (
+                            <button 
                               className="btn btn-secondary"
                               style={{ padding: '0.5rem', color: 'var(--primary)', borderColor: 'var(--primary)' }}
                               onClick={handleLaunchExternalGps}
@@ -512,12 +758,57 @@ export default function MobileSimulator({
                         </div>
                       </div>
                     )}
+
+                    {/* GPS Chooser Modal */}
+                    {showGpsChooser && selectedOp && (
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'flex-end' }}>
+                        <div style={{ backgroundColor: 'white', width: '100%', padding: '1.5rem', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
+                          <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center' }}>Lancer la navigation avec :</h4>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button 
+                              className="btn" 
+                              style={{ backgroundColor: '#e2e8f0', color: '#0f172a', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', padding: '0.75rem 1rem' }}
+                              onClick={() => {
+                                const client = clients.find(c => c.id === selectedOp.clientId);
+                                if (client) {
+                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${client.gps.lat},${client.gps.lng}`, '_blank');
+                                }
+                                setShowGpsChooser(false);
+                              }}
+                            >
+                              📍 Google Maps
+                            </button>
+                            <button 
+                              className="btn" 
+                              style={{ backgroundColor: '#e2e8f0', color: '#0f172a', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', padding: '0.75rem 1rem' }}
+                              onClick={() => {
+                                const client = clients.find(c => c.id === selectedOp.clientId);
+                                if (client) {
+                                  window.open(`https://waze.com/ul?ll=${client.gps.lat},${client.gps.lng}&navigate=yes`, '_blank');
+                                }
+                                setShowGpsChooser(false);
+                              }}
+                            >
+                              🚗 Waze
+                            </button>
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ marginTop: '0.5rem' }}
+                              onClick={() => setShowGpsChooser(false)}
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                   </div>
                 ) : (
                   /* LIST TAB */
                   <div className="mobile-job-list">
-                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                      MISSIONS DU JOUR ({activeJobs.length})
+                    <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem', padding: '0 0.5rem' }}>
+                      MES INTERVENTIONS ({activeJobs.length})
                     </div>
                     {activeJobs.map(op => {
                       const client = clients.find(c => c.id === op.clientId);
@@ -527,6 +818,7 @@ export default function MobileSimulator({
                         <div 
                           key={op.id} 
                           className="mobile-job-card"
+                          style={{ position: 'relative' }}
                           onClick={() => {
                             setSelectedOp(op);
                             setMobileTab('map');
@@ -540,9 +832,19 @@ export default function MobileSimulator({
                           </div>
                           <p className="mobile-job-card-desc">{op.description}</p>
                           <div className="mobile-job-card-footer">
-                            <span>📍 {client?.address.split(',')[0]}</span>
-                            <span>📏 {dist.toFixed(1)} km</span>
+                            <span><MapPin size={12} style={{display:'inline', verticalAlign:'middle'}}/> {client?.address.split(',')[0]}</span>
+                            <span><Navigation size={12} style={{display:'inline', verticalAlign:'middle'}}/> {dist.toFixed(1)} km</span>
                           </div>
+                          <button 
+                            style={{ position: 'absolute', right: '1rem', bottom: '1rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 5px rgba(0,0,0,0.2)' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedOp(op);
+                              setMobileTab('map');
+                            }}
+                          >
+                            <Navigation size={14} />
+                          </button>
                         </div>
                       );
                     })}

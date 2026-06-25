@@ -1,5 +1,6 @@
 import pkg from '@prisma/client';
 const { PrismaClient } = pkg;
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -15,7 +16,7 @@ const initialEmployees = [
     longitude: -4.0205, // Plateau, Abidjan
     workingHoursStart: "07:30",
     workingHoursEnd: "17:30",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+    avatar: "/koffi.jpg"
   },
   {
     id: "emp_2",
@@ -140,9 +141,11 @@ async function main() {
   await prisma.client.deleteMany({});
   await prisma.employee.deleteMany({});
 
+  const hashedPassword = await bcrypt.hash('password123', 10);
+
   // Insertion des employés
   for (const emp of initialEmployees) {
-    await prisma.employee.create({ data: emp });
+    await prisma.employee.create({ data: { ...emp, password: hashedPassword } });
   }
 
   // Insertion des clients

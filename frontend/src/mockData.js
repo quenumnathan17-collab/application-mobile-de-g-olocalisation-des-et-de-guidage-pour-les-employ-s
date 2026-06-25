@@ -10,7 +10,7 @@ export const initialEmployees = [
     status: "active",
     gps: { lat: 5.3245, lng: -4.0205 }, // Plateau, Abidjan
     workingHours: { start: "07:30", end: "17:30" },
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80"
+    avatar: "/koffi.jpg"
   },
   {
     id: "emp_2",
@@ -81,7 +81,7 @@ export const initialOperations = [
   {
     id: "op_1",
     clientId: "client_1",
-    description: "Maintenance préventive des serveurs du siège social (SIB)",
+    description: "Audit de Cybersécurité et tests d'intrusion de l'infrastructure SI",
     date: "2026-06-18",
     employeeId: "emp_1",
     status: "en cours",
@@ -90,7 +90,7 @@ export const initialOperations = [
   {
     id: "op_2",
     clientId: "client_2",
-    description: "Installation et configuration de la fibre optique à domicile",
+    description: "Installation de système de sécurité électronique et vidéosurveillance",
     date: "2026-06-18",
     employeeId: "emp_1",
     status: "planifiée",
@@ -99,7 +99,7 @@ export const initialOperations = [
   {
     id: "op_3",
     clientId: "client_3",
-    description: "Audit de sécurité réseau et mise à jour du firewall de la clinique",
+    description: "Déploiement d'infrastructure réseau électrique et baies de brassage",
     date: "2026-06-18",
     employeeId: "emp_2",
     status: "en cours",
@@ -108,10 +108,11 @@ export const initialOperations = [
   {
     id: "op_4",
     clientId: "client_4",
-    description: "Dépannage de la liaison sans fil et paramétrage du routeur WiFi",
+    description: "Consulting en Transformation Digitale et digitalisation des processus",
     date: "2026-06-19",
     employeeId: "emp_2",
     status: "planifiée",
     createdAt: "2026-06-18T08:00:00Z"
   }
 ];
+

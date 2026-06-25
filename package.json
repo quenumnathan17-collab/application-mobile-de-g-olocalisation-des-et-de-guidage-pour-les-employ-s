@@ -1,43 +1,17 @@
 {
-  "name": "application-mobile-de-g-olocalisation-des-clients-et-de-guidage-pour-les-employ-s",
+  "name": "ya-consulting-monorepo",
   "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
   "scripts": {
-    "dev": "vite",
-    "server": "node server.js",
-    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
-    "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "dev:backend": "cd backend && node server.js",
+    "dev:frontend": "cd frontend && npx vite",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "install:all": "npm run install:frontend && npm run install:backend"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@mui/icons-material": "^9.1.1",
-    "@mui/material": "^9.1.1",
-    "@prisma/client": "^5.22.0",
-    "concurrently": "^10.0.3",
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^1.21.0",
-    "react": "^19.2.6",
-    "react-dom": "^19.2.6"
-  },
-  "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "@types/react": "^19.2.14",
-    "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^10.3.0",
-    "eslint-plugin-react-hooks": "^7.1.1",
-    "eslint-plugin-react-refresh": "^0.5.2",
-    "globals": "^17.6.0",
-    "prisma": "^5.22.0",
-    "vite": "^8.0.12"
-  },
-  "prisma": {
-    "seed": "node prisma/seed.js"
+    "concurrently": "^10.0.3"
   }
 }
+
