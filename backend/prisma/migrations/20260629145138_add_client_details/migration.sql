@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "Client" ADD COLUMN     "contactName" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "email" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "notes" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "phone" TEXT NOT NULL DEFAULT '';

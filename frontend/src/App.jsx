@@ -3,6 +3,7 @@ import AdminDashboard from './components/AdminDashboard';
 import MobileSimulator from './components/MobileSimulator';
 import Login from './components/Login';
 import BrandLogo from './components/BrandLogo';
+import InstallPrompt from './components/InstallPrompt';
 import { Sun, Moon, Bell, Info, LayoutGrid, Monitor, Smartphone, LogOut } from 'lucide-react';
 import { Snackbar, Alert } from '@mui/material';
 
@@ -284,6 +285,18 @@ export default function App() {
     }, 4000);
   };
 
+  // Called by MobileSimulator when an employee saves their profile
+  const onProfileUpdated = (updatedEmployee) => {
+    // Update employees list so avatar/name refresh everywhere (map markers, lists, etc.)
+    setEmployees(prev => prev.map(e => e.id === updatedEmployee.id ? { ...e, ...updatedEmployee } : e));
+    // If it's the currently logged-in user, update their session too
+    if (currentUser && currentUser.id === updatedEmployee.id) {
+      const refreshed = { ...currentUser, ...updatedEmployee };
+      setCurrentUser(refreshed);
+      localStorage.setItem('user', JSON.stringify(refreshed));
+    }
+  };
+
   const toggleTheme = () => {
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
   };
@@ -388,6 +401,7 @@ export default function App() {
             updateOperationStatus={updateOperationStatus}
             updateEmployeeGps={updateEmployeeGps}
             addNotification={triggerNotification}
+            onProfileUpdated={onProfileUpdated}
             layoutMode={effectiveLayoutMode}
             currentUser={currentUser}
             theme={theme}
@@ -405,6 +419,9 @@ export default function App() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* PWA Install Banner */}
+      <InstallPrompt />
     </div>
   );
 }

@@ -108,6 +108,10 @@ export default function AdminDashboard({
   const [newClientName, setNewClientName] = useState('');
   const [newClientType, setNewClientType] = useState('entreprise');
   const [newClientAddress, setNewClientAddress] = useState('');
+  const [newClientPhone, setNewClientPhone] = useState('');
+  const [newClientEmail, setNewClientEmail] = useState('');
+  const [newClientContactName, setNewClientContactName] = useState('');
+  const [newClientNotes, setNewClientNotes] = useState('');
   const [geocodingAlert, setGeocodingAlert] = useState(null); // { type: 'success'|'error', text: '' }
 
   const [showEditClient, setShowEditClient] = useState(false);
@@ -324,7 +328,11 @@ export default function AdminDashboard({
         type: newClientType,
         address: newClientAddress,
         lat: location.lat,
-        lng: location.lng
+        lng: location.lng,
+        phone: newClientPhone,
+        email: newClientEmail,
+        contactName: newClientContactName,
+        notes: newClientNotes
       });
 
       setNewOpClient(savedClient.id); // Auto-select this client in the operations assignment modal if open
@@ -338,6 +346,10 @@ export default function AdminDashboard({
         setShowAddClient(false);
         setNewClientName('');
         setNewClientAddress('');
+        setNewClientPhone('');
+        setNewClientEmail('');
+        setNewClientContactName('');
+        setNewClientNotes('');
         setGeocodingAlert(null);
       }, 1500);
     } catch (err) {
@@ -1541,6 +1553,46 @@ export default function AdminDashboard({
                 helperText="💡 L'adresse sera géocodée automatiquement par notre moteur cartographique à Abidjan."
               />
 
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Téléphone"
+                    fullWidth
+                    placeholder="Ex: +225 07 00 00 00"
+                    value={newClientPhone}
+                    onChange={(e) => setNewClientPhone(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="Adresse Email"
+                    type="email"
+                    fullWidth
+                    placeholder="Ex: contact@entreprise.ci"
+                    value={newClientEmail}
+                    onChange={(e) => setNewClientEmail(e.target.value)}
+                  />
+                </Grid>
+              </Grid>
+
+              <TextField
+                label="Nom du contact principal"
+                fullWidth
+                placeholder="Ex: M. Koffi Konan, Responsable SI"
+                value={newClientContactName}
+                onChange={(e) => setNewClientContactName(e.target.value)}
+              />
+
+              <TextField
+                label="Notes de guidage / Description"
+                fullWidth
+                multiline
+                rows={3}
+                placeholder="Ex: Portail bleu juste à côté de la pharmacie, 2ème étage..."
+                value={newClientNotes}
+                onChange={(e) => setNewClientNotes(e.target.value)}
+              />
+
               {geocodingAlert && (
                 <Alert 
                   severity={geocodingAlert.type} 
@@ -1603,6 +1655,42 @@ export default function AdminDashboard({
                   value={editClientData.address}
                   onChange={(e) => setEditClientData({ ...editClientData, address: e.target.value })}
                   helperText="💡 L'adresse sera géocodée automatiquement par Google Maps."
+                />
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Téléphone"
+                      fullWidth
+                      value={editClientData.phone || ''}
+                      onChange={(e) => setEditClientData({ ...editClientData, phone: e.target.value })}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Adresse Email"
+                      type="email"
+                      fullWidth
+                      value={editClientData.email || ''}
+                      onChange={(e) => setEditClientData({ ...editClientData, email: e.target.value })}
+                    />
+                  </Grid>
+                </Grid>
+
+                <TextField
+                  label="Nom du contact principal"
+                  fullWidth
+                  value={editClientData.contactName || ''}
+                  onChange={(e) => setEditClientData({ ...editClientData, contactName: e.target.value })}
+                />
+
+                <TextField
+                  label="Notes de guidage / Description"
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={editClientData.notes || ''}
+                  onChange={(e) => setEditClientData({ ...editClientData, notes: e.target.value })}
                 />
 
                 {geocodingAlert && (
@@ -1761,6 +1849,48 @@ export default function AdminDashboard({
                         secondary={`GPS: ${client.gps.lat.toFixed(5)}, ${client.gps.lng.toFixed(5)} — Cliquer pour voir sur la carte`}
                       />
                     </ListItem>
+
+                    {client.contactName && (
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}><PersonIcon color="primary" /></ListItemIcon>
+                        <ListItemText 
+                          primary={client.contactName} 
+                          secondary="Contact Principal"
+                        />
+                      </ListItem>
+                    )}
+
+                    {client.phone && (
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}><PhoneIcon color="primary" /></ListItemIcon>
+                        <ListItemText 
+                          primary={client.phone} 
+                          secondary="Téléphone"
+                        />
+                      </ListItem>
+                    )}
+
+                    {client.email && (
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon sx={{ minWidth: 36 }}><EmailIcon color="primary" /></ListItemIcon>
+                        <ListItemText 
+                          primary={client.email} 
+                          secondary="Adresse Email"
+                        />
+                      </ListItem>
+                    )}
+
+                    {client.notes && (
+                      <ListItem sx={{ px: 0, alignItems: 'flex-start' }}>
+                        <ListItemIcon sx={{ minWidth: 36, mt: 0.5 }}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={<Typography variant="body2" sx={{ whiteSpace: 'pre-line', bgcolor: (theme) => theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.05)' : '#f8fafc', p: 1.5, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>{client.notes}</Typography>} 
+                          secondary="Notes & Consignes de guidage"
+                        />
+                      </ListItem>
+                    )}
                   </List>
 
                   <Divider sx={{ my: 2 }} />

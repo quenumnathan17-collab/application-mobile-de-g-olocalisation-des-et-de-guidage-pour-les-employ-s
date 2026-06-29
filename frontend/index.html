@@ -2,16 +2,58 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📍</text></svg>" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YA CONSULTING — Géolocalisation & Guidage</title>
-    <!-- Leaflet CSS for Map renders -->
-    <link 
-      rel="stylesheet" 
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-      crossorigin="" 
+
+    <!-- ─── Viewport & PWA meta ─────────────────────────────────────────── -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="YA Nav" />
+    <meta name="application-name" content="YA Nav" />
+    <meta name="theme-color" content="#2d3a6d" />
+    <meta name="msapplication-TileColor" content="#2d3a6d" />
+    <meta name="msapplication-TileImage" content="/icons/icon-144.png" />
+    <meta name="msapplication-config" content="none" />
+
+    <!-- ─── SEO & description ────────────────────────────────────────────── -->
+    <meta name="description" content="Application mobile de géolocalisation des clients et de guidage pour les employés YA CONSULTING — Abidjan, Côte d'Ivoire." />
+    <meta name="keywords" content="géolocalisation, guidage, interventions, YA Consulting, Abidjan" />
+    <meta name="author" content="YA CONSULTING" />
+    <meta name="robots" content="noindex, nofollow" />
+
+    <!-- ─── Open Graph (partage WhatsApp / Messenger / etc.) ────────────── -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="YA CONSULTING — Géolocalisation & Guidage" />
+    <meta property="og:description" content="Géolocalisation des clients et guidage GPS pour les équipes terrain YA CONSULTING." />
+    <meta property="og:image" content="/icons/icon-512.png" />
+
+    <!-- ─── Icônes ──────────────────────────────────────────────────────── -->
+    <!-- Favicon standard -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/icons/icon-96.png" />
+
+    <!-- Apple Touch Icons (iOS / iPadOS) -->
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="72x72"  href="/icons/icon-72.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/icons/icon-144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
+
+    <!-- Apple splash screens (optionnel — améliore l'expérience iOS) -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- PWA Manifest (généré automatiquement par vite-plugin-pwa) -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- ─── Leaflet CSS ──────────────────────────────────────────────────── -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
     />
+
+    <title>YA CONSULTING — Géolocalisation &amp; Guidage</title>
   </head>
   <body>
     <div id="root"></div>

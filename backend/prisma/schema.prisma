@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -25,13 +25,17 @@ model Employee {
 }
 
 model Client {
-  id        String  @id
-  name      String
-  type      String
-  address   String
-  latitude  Float
-  longitude Float
-  archived  Boolean @default(false)
+  id          String  @id
+  name        String
+  type        String
+  address     String
+  latitude    Float
+  longitude   Float
+  phone       String  @default("")
+  email       String  @default("")
+  contactName String  @default("")
+  notes       String  @default("")
+  archived    Boolean @default(false)
 }
 
 model Operation {

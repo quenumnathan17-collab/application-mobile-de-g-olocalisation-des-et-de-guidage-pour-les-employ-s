@@ -15,7 +15,8 @@ const JWT_SECRET = process.env.JWT_SECRET || 'ya-consulting-super-secret-key-202
 let sseClients = [];
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // --- API ROUTES ---
 
@@ -66,6 +67,70 @@ app.post('/api/login', async (req, res) => {
         phone: user.phone,
         role: user.role,
         avatar: user.avatar
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- REGISTER (public) ---
+app.post('/api/register', async (req, res) => {
+  let { name, email, phone, password, avatar, specialty, commune } = req.body;
+  
+  if (!name || !email || !phone || !password) {
+    return res.status(400).json({ error: "Nom, email, téléphone et mot de passe sont obligatoires." });
+  }
+
+  // Basic email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ error: "Adresse email invalide." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ error: "Le mot de passe doit contenir au moins 6 caractères." });
+  }
+
+  try {
+    const existing = await prisma.employee.findFirst({
+      where: { OR: [{ email }, { phone }] }
+    });
+    if (existing) {
+      return res.status(400).json({ error: "Un compte avec cet email ou ce téléphone existe déjà." });
+    }
+
+    const empCount = await prisma.employee.count();
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // Default avatar if not provided
+    const chosenAvatar = avatar || AVATAR_PRESETS[empCount % AVATAR_PRESETS.length];
+    
+    const newEmp = await prisma.employee.create({
+      data: {
+        id: `emp_${empCount + 1}_${Date.now()}`,
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone.trim(),
+        role: 'employee',
+        status: 'active',
+        latitude: 5.3600,
+        longitude: -4.0083,
+        workingHoursStart: "08:00",
+        workingHoursEnd: "18:00",
+        avatar: chosenAvatar,
+        password: hashedPassword
+      }
+    });
+
+    res.status(201).json({ 
+      message: "Compte créé avec succès. Vous pouvez maintenant vous connecter.",
+      user: {
+        id: newEmp.id,
+        name: newEmp.name,
+        email: newEmp.email,
+        phone: newEmp.phone,
+        role: newEmp.role
       }
     });
   } catch (err) {
@@ -151,6 +216,10 @@ app.get('/api/clients', authenticateToken, async (req, res) => {
       type: c.type,
       address: c.address,
       gps: { lat: c.latitude, lng: c.longitude },
+      phone: c.phone,
+      email: c.email,
+      contactName: c.contactName,
+      notes: c.notes,
       archived: c.archived
     }));
     res.json(mapped);
@@ -160,7 +229,7 @@ app.get('/api/clients', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/clients', authenticateToken, requireRole('admin'), async (req, res) => {
-  const { name, type, address, lat, lng } = req.body;
+  const { name, type, address, lat, lng, phone, email, contactName, notes } = req.body;
   if (!name || !address || lat === undefined || lng === undefined) {
     return res.status(400).json({ error: "Champs Nom, Adresse, lat et lng obligatoires" });
   }
@@ -175,6 +244,10 @@ app.post('/api/clients', authenticateToken, requireRole('admin'), async (req, re
         address,
         latitude: lat,
         longitude: lng,
+        phone: phone || "",
+        email: email || "",
+        contactName: contactName || "",
+        notes: notes || "",
         archived: false
       }
     });
@@ -185,6 +258,10 @@ app.post('/api/clients', authenticateToken, requireRole('admin'), async (req, re
       type: newClient.type,
       address: newClient.address,
       gps: { lat: newClient.latitude, lng: newClient.longitude },
+      phone: newClient.phone,
+      email: newClient.email,
+      contactName: newClient.contactName,
+      notes: newClient.notes,
       archived: newClient.archived
     });
   } catch (err) {
@@ -194,7 +271,7 @@ app.post('/api/clients', authenticateToken, requireRole('admin'), async (req, re
 
 app.put('/api/clients/:id', authenticateToken, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
-  const { name, type, address, archived, lat, lng } = req.body;
+  const { name, type, address, archived, lat, lng, phone, email, contactName, notes } = req.body;
 
   try {
     const dataToUpdate = { name, type, address, archived };
@@ -202,6 +279,10 @@ app.put('/api/clients/:id', authenticateToken, requireRole('admin'), async (req,
       dataToUpdate.latitude = lat;
       dataToUpdate.longitude = lng;
     }
+    if (phone !== undefined) dataToUpdate.phone = phone;
+    if (email !== undefined) dataToUpdate.email = email;
+    if (contactName !== undefined) dataToUpdate.contactName = contactName;
+    if (notes !== undefined) dataToUpdate.notes = notes;
 
     const updated = await prisma.client.update({
       where: { id },
@@ -214,6 +295,10 @@ app.put('/api/clients/:id', authenticateToken, requireRole('admin'), async (req,
       type: updated.type,
       address: updated.address,
       gps: { lat: updated.latitude, lng: updated.longitude },
+      phone: updated.phone,
+      email: updated.email,
+      contactName: updated.contactName,
+      notes: updated.notes,
       archived: updated.archived
     });
   } catch (err) {
@@ -340,6 +425,62 @@ app.delete('/api/employees/:id', authenticateToken, requireRole('admin'), async 
       where: { id }
     });
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update own profile (employee or admin)
+app.put('/api/employees/:id/profile', authenticateToken, async (req, res) => {
+  const { id } = req.params;
+
+  // Only allow if owner or admin
+  if (req.user.id !== id && req.user.role !== 'admin') {
+    return res.status(403).json({ error: "Accès refusé." });
+  }
+
+  const { name, email, phone, avatar, currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await prisma.employee.findUnique({ where: { id } });
+    if (!user) return res.status(404).json({ error: "Employé introuvable." });
+
+    const dataToUpdate = {};
+
+    if (name  && name.trim())  dataToUpdate.name  = name.trim();
+    if (email && email.trim()) {
+      // Check uniqueness
+      const conflict = await prisma.employee.findFirst({
+        where: { email: email.trim().toLowerCase(), NOT: { id } }
+      });
+      if (conflict) return res.status(400).json({ error: "Cet email est déjà utilisé par un autre compte." });
+      dataToUpdate.email = email.trim().toLowerCase();
+    }
+    if (phone && phone.trim()) dataToUpdate.phone = phone.trim();
+    if (avatar !== undefined)  dataToUpdate.avatar = avatar;
+
+    // Password change
+    if (newPassword) {
+      if (!currentPassword) return res.status(400).json({ error: "Veuillez fournir votre mot de passe actuel." });
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(401).json({ error: "Mot de passe actuel incorrect." });
+      if (newPassword.length < 6) return res.status(400).json({ error: "Le nouveau mot de passe doit contenir au moins 6 caractères." });
+      dataToUpdate.password = await bcrypt.hash(newPassword, 10);
+    }
+
+    const updated = await prisma.employee.update({ where: { id }, data: dataToUpdate });
+
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      phone: updated.phone,
+      role: updated.role,
+      status: updated.status,
+      gps: { lat: updated.latitude, lng: updated.longitude },
+      workingHours: { start: updated.workingHoursStart, end: updated.workingHoursEnd },
+      avatar: updated.avatar
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

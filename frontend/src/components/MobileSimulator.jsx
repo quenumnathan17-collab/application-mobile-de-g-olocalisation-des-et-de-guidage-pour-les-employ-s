@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import L from 'leaflet';
 import 'leaflet-routing-machine';
 import { 
   LogOut, Map, List, Navigation, Clock, 
   WifiOff, Search, Compass, ChevronRight, 
-  MapPin, CheckCircle2, Play, ExternalLink, RefreshCw
+  MapPin, CheckCircle2, Play, ExternalLink, RefreshCw,
+  Settings, User, Camera, Lock, Phone, Mail, Save, Eye, EyeOff, CheckCheck, AlertCircle
 } from 'lucide-react';
 
 export default function MobileSimulator({ 
@@ -16,8 +17,10 @@ export default function MobileSimulator({
   updateOperationStatus,
   updateEmployeeGps,
   addNotification,
+  onProfileUpdated,
   layoutMode,
-  theme
+  theme,
+  currentUser
 }) {
   const getArrivalTime = (durationMinutes) => {
     const now = new Date();
@@ -26,7 +29,22 @@ export default function MobileSimulator({
     return now.toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' });
   };
 
-  const [mobileTab, setMobileTab] = useState('map'); // 'map', 'list'
+  const [mobileTab, setMobileTab] = useState('map'); // 'map', 'list', 'settings'
+
+  // ── Profile / Settings state ───────────────────────────────────────────────
+  const [profileForm, setProfileForm] = useState({ name: '', email: '', phone: '' });
+  const [profileAvatar, setProfileAvatar] = useState(null);  // base64 preview
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError]     = useState('');
+  const [pwdForm, setPwdForm]               = useState({ current: '', next: '', confirm: '' });
+  const [pwdLoading, setPwdLoading]         = useState(false);
+  const [pwdSuccess, setPwdSuccess]         = useState('');
+  const [pwdError, setPwdError]             = useState('');
+  const [showCurrent, setShowCurrent]       = useState(false);
+  const [showNext, setShowNext]             = useState(false);
+  const [showConfirm, setShowConfirm]       = useState(false);
+  const profileFileRef = useRef(null);
   const [selectedOp, setSelectedOp] = useState(null);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
@@ -75,6 +93,96 @@ export default function MobileSimulator({
 
   // Active employee object
   const activeEmployee = employees.find(e => e.id === activeEmployeeId);
+
+  // Sync profile form when active employee changes or settings tab opens
+  useEffect(() => {
+    if (activeEmployee && mobileTab === 'settings') {
+      setProfileForm({ name: activeEmployee.name, email: activeEmployee.email, phone: activeEmployee.phone });
+      setProfileAvatar(null);
+      setProfileSuccess('');
+      setProfileError('');
+      setPwdForm({ current: '', next: '', confirm: '' });
+      setPwdSuccess('');
+      setPwdError('');
+    }
+  }, [mobileTab, activeEmployee?.id]);
+
+  // Process photo file for profile
+  const processProfileFile = useCallback((file) => {
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setProfileError('Choisissez une image (JPG, PNG, WebP…).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setProfileError('La photo ne doit pas dépasser 5 Mo.');
+      return;
+    }
+    setProfileError('');
+    const reader = new FileReader();
+    reader.onload = (ev) => setProfileAvatar(ev.target.result);
+    reader.readAsDataURL(file);
+  }, []);
+
+  // Save profile info
+  const handleSaveProfile = async () => {
+    if (!activeEmployee) return;
+    setProfileLoading(true); setProfileError(''); setProfileSuccess('');
+    try {
+      const token = localStorage.getItem('token');
+      const body  = {
+        name:   profileForm.name,
+        email:  profileForm.email,
+        phone:  profileForm.phone,
+        avatar: profileAvatar !== null ? profileAvatar : undefined,
+      };
+      const res  = await fetch(`/api/employees/${activeEmployee.id}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur de sauvegarde.');
+
+      // Propagate to parent App so all components (header, map, lists) update immediately
+      if (onProfileUpdated) onProfileUpdated(data);
+
+      // Keep avatar preview in sync
+      if (profileAvatar) setProfileAvatar(data.avatar || profileAvatar);
+
+      setProfileSuccess('Profil mis à jour avec succès !');
+      addNotification({ title: '✅ Profil mis à jour', body: 'Vos informations ont été enregistrées.' });
+    } catch (err) {
+      setProfileError(err.message);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  // Change password
+  const handleChangePassword = async () => {
+    if (!activeEmployee) return;
+    if (pwdForm.next !== pwdForm.confirm) { setPwdError('Les mots de passe ne correspondent pas.'); return; }
+    if (pwdForm.next.length < 6) { setPwdError('Le nouveau mot de passe doit contenir au moins 6 caractères.'); return; }
+    setPwdLoading(true); setPwdError(''); setPwdSuccess('');
+    try {
+      const token = localStorage.getItem('token');
+      const res  = await fetch(`/api/employees/${activeEmployee.id}/profile`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: pwdForm.current, newPassword: pwdForm.next }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Erreur.');
+      setPwdSuccess('Mot de passe modifié avec succès !');
+      setPwdForm({ current: '', next: '', confirm: '' });
+      addNotification({ title: '🔐 Mot de passe modifié', body: 'Votre nouveau mot de passe est actif.' });
+    } catch (err) {
+      setPwdError(err.message);
+    } finally {
+      setPwdLoading(false);
+    }
+  };
 
 
   // Calculate distance between two GPS coordinates in km
@@ -553,7 +661,7 @@ export default function MobileSimulator({
             </div>
           ) : (
             /* 2. ACTIVE APPLICATION APP */
-            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minHeight: 0 }}>
               <div className="mobile-app-header">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <img src={activeEmployee.avatar} alt={activeEmployee.name} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
@@ -585,7 +693,7 @@ export default function MobileSimulator({
               <div className="mobile-app-body">
                 {mobileTab === 'map' ? (
                   /* MAP TAB */
-                  <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                  <div style={{ position: 'relative', width: '100%', flex: 1, minHeight: 0 }}>
                     <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
                     {/* Search and Filters Overlay */}
@@ -669,6 +777,65 @@ export default function MobileSimulator({
                           <MapPin size={12} />
                           {clients.find(c => c.id === selectedOp.clientId)?.address || ""}
                         </div>
+
+                        {/* Infos client additionnelles pour le technicien terrain */}
+                        {(() => {
+                          const client = clients.find(c => c.id === selectedOp.clientId);
+                          if (!client) return null;
+                          return (
+                            <div style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '0.4rem',
+                              background: '#f8fafc',
+                              padding: '0.75rem',
+                              borderRadius: '10px',
+                              marginBottom: '0.875rem',
+                              border: '1px solid #e2e8f0',
+                              fontSize: '0.8rem'
+                            }}>
+                              {client.contactName && (
+                                <div style={{ color: '#334155' }}>
+                                  👤 Contact : <strong>{client.contactName}</strong>
+                                </div>
+                              )}
+                              {client.phone && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  📞 Tél :{' '}
+                                  <a 
+                                    href={`tel:${client.phone}`}
+                                    style={{
+                                      color: '#3b5edb',
+                                      textDecoration: 'none',
+                                      fontWeight: 'bold',
+                                      backgroundColor: '#e0e7ff',
+                                      padding: '0.1rem 0.5rem',
+                                      borderRadius: '6px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '0.2rem'
+                                    }}
+                                  >
+                                    {client.phone}
+                                  </a>
+                                </div>
+                              )}
+                              {client.notes && (
+                                <div style={{ 
+                                  marginTop: '0.25rem',
+                                  paddingTop: '0.4rem',
+                                  borderTop: '1px dashed #cbd5e1',
+                                  color: '#475569',
+                                  fontSize: '0.75rem',
+                                  fontStyle: 'italic',
+                                  lineHeight: 1.3
+                                }}>
+                                  💡 <strong>Guidage :</strong> {client.notes}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })()}
                         <div className="sheet-job-desc">
                           {selectedOp.description}
                         </div>
@@ -804,7 +971,7 @@ export default function MobileSimulator({
                     )}
 
                   </div>
-                ) : (
+                ) : mobileTab === 'list' ? (
                   /* LIST TAB */
                   <div className="mobile-job-list">
                     <div style={{ fontWeight: 700, fontSize: '0.875rem', color: '#64748b', marginBottom: '0.25rem', padding: '0 0.5rem' }}>
@@ -821,6 +988,9 @@ export default function MobileSimulator({
                           style={{ position: 'relative' }}
                           onClick={() => {
                             setSelectedOp(op);
+                            if (op.status === 'planifiée') {
+                              handleStatusChange(op.id, 'en cours');
+                            }
                             setMobileTab('map');
                           }}
                         >
@@ -854,6 +1024,198 @@ export default function MobileSimulator({
                       </div>
                     )}
                   </div>
+                ) : (
+                  /* SETTINGS / PROFILE TAB */
+                  <div style={{
+                    flex: 1,
+                    minHeight: 0,
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    background: '#f4f6fb',
+                    scrollBehavior: 'smooth',
+                    WebkitOverflowScrolling: 'touch'
+                  }}>
+                    {/* ── Avatar section ── */}
+                    <div style={{ background: 'linear-gradient(135deg,#1a2244,#3b5edb)', padding: '1.5rem 1rem 2.5rem', textAlign: 'center', position: 'relative' }}>
+                      <div
+                        style={{ position: 'relative', display: 'inline-block', cursor: 'pointer' }}
+                        onClick={() => profileFileRef.current?.click()}
+                      >
+                        <img
+                          src={profileAvatar || activeEmployee.avatar}
+                          alt={activeEmployee.name}
+                          style={{ width: 80, height: 80, borderRadius: '50%', border: '3px solid white', objectFit: 'cover', display: 'block' }}
+                        />
+                        <div style={{
+                          position: 'absolute', bottom: 0, right: 0,
+                          background: '#3b5edb', borderRadius: '50%',
+                          width: 26, height: 26, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          border: '2px solid white', cursor: 'pointer'
+                        }}>
+                          <Camera size={13} color="white" />
+                        </div>
+                      </div>
+                      <input ref={profileFileRef} type="file" accept="image/*" style={{ display: 'none' }}
+                        onChange={e => processProfileFile(e.target.files[0])} />
+                      <div style={{ color: 'white', fontWeight: 800, fontSize: '1rem', marginTop: '0.5rem' }}>{activeEmployee.name}</div>
+                      <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>{activeEmployee.email}</div>
+                      {profileAvatar && (
+                        <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                          <button onClick={() => setProfileAvatar(null)} style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '20px', cursor: 'pointer' }}>✕ Annuler</button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '-1rem' }}>
+
+                      {/* ── Personal info card ── */}
+                      <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', color: '#1a2744', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <User size={14} color="#3b5edb" /> Informations personnelles
+                        </div>
+
+                        {profileError && (
+                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
+                            <AlertCircle size={14} />{profileError}
+                          </div>
+                        )}
+                        {profileSuccess && (
+                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
+                            <CheckCheck size={14} />{profileSuccess}
+                          </div>
+                        )}
+
+                        {/* Name */}
+                        <div style={{ marginBottom: '0.625rem' }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
+                            <User size={12} /> Nom complet
+                          </label>
+                          <input
+                            value={profileForm.name}
+                            onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))}
+                            placeholder={activeEmployee.name}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            onFocus={e => e.target.style.borderColor = '#3b5edb'}
+                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                          />
+                        </div>
+
+                        {/* Email */}
+                        <div style={{ marginBottom: '0.625rem' }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
+                            <Mail size={12} /> Adresse email
+                          </label>
+                          <input
+                            type="email"
+                            value={profileForm.email}
+                            onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))}
+                            placeholder={activeEmployee.email}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            onFocus={e => e.target.style.borderColor = '#3b5edb'}
+                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                          />
+                        </div>
+
+                        {/* Phone */}
+                        <div style={{ marginBottom: '0.875rem' }}>
+                          <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem' }}>
+                            <Phone size={12} /> Téléphone
+                          </label>
+                          <input
+                            type="tel"
+                            value={profileForm.phone}
+                            onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}
+                            placeholder={activeEmployee.phone}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            onFocus={e => e.target.style.borderColor = '#3b5edb'}
+                            onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                          />
+                        </div>
+
+                        <button
+                          onClick={handleSaveProfile}
+                          disabled={profileLoading}
+                          style={{
+                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: 'none',
+                            background: profileLoading ? '#93c5fd' : 'linear-gradient(135deg,#2d3a6d,#3b5edb)',
+                            color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: profileLoading ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(59,94,219,0.3)'
+                          }}
+                        >
+                          {profileLoading ? (
+                            <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> Enregistrement…</>
+                          ) : (
+                            <><Save size={15} /> Sauvegarder le profil</>
+                          )}
+                        </button>
+                      </div>
+
+                      {/* ── Password card ── */}
+                      <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', color: '#1a2744', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          <Lock size={14} color="#3b5edb" /> Changer le mot de passe
+                        </div>
+
+                        {pwdError && (
+                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
+                            <AlertCircle size={14} />{pwdError}
+                          </div>
+                        )}
+                        {pwdSuccess && (
+                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
+                            <CheckCheck size={14} />{pwdSuccess}
+                          </div>
+                        )}
+
+                        {[{ label: 'Mot de passe actuel', key: 'current', show: showCurrent, toggle: () => setShowCurrent(p => !p) },
+                          { label: 'Nouveau mot de passe', key: 'next', show: showNext, toggle: () => setShowNext(p => !p) },
+                          { label: 'Confirmer le nouveau', key: 'confirm', show: showConfirm, toggle: () => setShowConfirm(p => !p) }]
+                          .map(({ label, key, show, toggle }) => (
+                            <div key={key} style={{ marginBottom: '0.625rem', position: 'relative' }}>
+                              <label style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>{label}</label>
+                              <div style={{ position: 'relative' }}>
+                                <input
+                                  type={show ? 'text' : 'password'}
+                                  value={pwdForm[key]}
+                                  onChange={e => setPwdForm(f => ({ ...f, [key]: e.target.value }))}
+                                  style={{ width: '100%', padding: '0.55rem 2.2rem 0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                                  onFocus={e => e.target.style.borderColor = '#3b5edb'}
+                                  onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={toggle}
+                                  style={{ position: 'absolute', right: '0.6rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', padding: 0, display: 'flex' }}
+                                >
+                                  {show ? <EyeOff size={15} /> : <Eye size={15} />}
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        }
+
+                        <button
+                          onClick={handleChangePassword}
+                          disabled={pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm}
+                          style={{
+                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: 'none',
+                            background: (pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm) ? '#cbd5e1' : 'linear-gradient(135deg,#0f172a,#1d4ed8)',
+                            color: 'white', fontWeight: 700, fontSize: '0.85rem',
+                            cursor: (pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm) ? 'not-allowed' : 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          {pwdLoading ? (
+                            <><div style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} /> En cours…</>
+                          ) : (
+                            <><Lock size={15} /> Modifier le mot de passe</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
 
@@ -863,15 +1225,22 @@ export default function MobileSimulator({
                   className={`mobile-nav-item ${mobileTab === 'map' ? 'active' : ''}`}
                   onClick={() => setMobileTab('map')}
                 >
-                  <Map size={18} />
+                  <Map size={16} />
                   <span>Carte</span>
                 </button>
                 <button 
                   className={`mobile-nav-item ${mobileTab === 'list' ? 'active' : ''}`}
                   onClick={() => setMobileTab('list')}
                 >
-                  <List size={18} />
+                  <List size={16} />
                   <span>Liste</span>
+                </button>
+                <button 
+                  className={`mobile-nav-item ${mobileTab === 'settings' ? 'active' : ''}`}
+                  onClick={() => setMobileTab('settings')}
+                >
+                  <Settings size={16} />
+                  <span>Profil</span>
                 </button>
               </div>
             </div>
@@ -926,8 +1295,43 @@ export default function MobileSimulator({
             <select 
               className="form-select" 
               style={{ padding: '0.25rem', fontSize: '0.75rem' }}
+              value=""
               onChange={(e) => {
-                const coords = e.target.value.split(',').map(Number);
+                const val = e.target.value;
+                if (!val) return;
+                
+                if (val === 'CUSTOM') {
+                  const addressInput = prompt("Entrez un nom de lieu ou de quartier à Abidjan\nExemple : Riviera 3, Yopougon Maroc, Plateau");
+                  if (!addressInput) return;
+                  
+                  // Geocoding query to OpenStreetMap Nominatim
+                  const query = `${addressInput}, Abidjan, Côte d'Ivoire`;
+                  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
+                    .then(res => res.json())
+                    .then(data => {
+                      if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lng = parseFloat(data[0].lon);
+                        
+                        updateEmployeeGps(activeEmployee.id, { lat, lng });
+                        setRoutePolyline(null);
+                        setRouteInfo(null);
+                        addNotification({
+                          title: "Relocalisation réussie",
+                          body: `Positionné à : ${data[0].display_name.split(',')[0]} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`
+                        });
+                      } else {
+                        alert("Lieu introuvable à Abidjan. Essayez d'être plus précis (ex: Cocody Mermoz).");
+                      }
+                    })
+                    .catch(err => {
+                      console.error("Geocoding error", err);
+                      alert("Erreur lors de la recherche de l'adresse.");
+                    });
+                  return;
+                }
+
+                const coords = val.split(',').map(Number);
                 updateEmployeeGps(activeEmployee.id, { lat: coords[0], lng: coords[1] });
                 setRoutePolyline(null);
                 setRouteInfo(null);
@@ -937,11 +1341,13 @@ export default function MobileSimulator({
                 });
               }}
             >
+              <option value="" disabled>Choisir position...</option>
               <option value="5.3245,-4.0205">Plateau (Position Initiale)</option>
               <option value="5.3571,-3.9897">Cocody (St-Jean)</option>
               <option value="5.3955,-3.9710">Angré (CNPS)</option>
               <option value="5.3050,-3.9785">Marcory (Zone 4)</option>
               <option value="5.3450,-4.0750">Yopougon (Siporex)</option>
+              <option value="CUSTOM">📍 Position personnalisée...</option>
             </select>
           </div>
         </div>
