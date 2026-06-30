@@ -4,24 +4,8 @@ import {
   CircularProgress, Link, Dialog, DialogTitle, DialogContent,
   DialogActions, InputAdornment, IconButton, Tab, Tabs, Avatar
 } from '@mui/material';
+import { Eye, EyeOff } from 'lucide-react';
 import BrandLogo from './BrandLogo';
-
-// ── Eye icons ────────────────────────────────────────────────────────────────
-const EyeOff = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
-
-const EyeOn = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-);
 
 // ── Shared field styles ───────────────────────────────────────────────────────
 const fieldSx = {
@@ -89,10 +73,10 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
 
   return (
     <>
-      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, display: { xs: 'none', md: 'block' } }}>
+      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5 }}>
         Bienvenue 👋
       </Typography>
-      <Typography variant="body2" sx={{ color: '#5e7290', mb: 3, display: { xs: 'none', md: 'block' } }}>
+      <Typography variant="body2" sx={{ color: '#5e7290', mb: 2.5 }}>
         Connectez-vous à votre espace de travail
       </Typography>
 
@@ -110,7 +94,7 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showPwd ? <EyeOff /> : <EyeOn />}
+                  {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
                 </IconButton>
               </InputAdornment>
             )
@@ -253,10 +237,10 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
 
   return (
     <>
-      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, display: { xs: 'none', md: 'block' } }}>
+      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5 }}>
         Créer un compte 🚀
       </Typography>
-      <Typography variant="body2" sx={{ color: '#5e7290', mb: 2, display: { xs: 'none', md: 'block' } }}>
+      <Typography variant="body2" sx={{ color: '#5e7290', mb: 2 }}>
         Rejoignez l'équipe YA Consulting
       </Typography>
 
@@ -336,7 +320,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showPwd ? <EyeOff /> : <EyeOn />}
+                  {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
                 </IconButton>
               </InputAdornment>
             )
@@ -350,7 +334,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
             endAdornment: (
               <InputAdornment position="end">
                 <IconButton onClick={() => setShowConfirm(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showConfirm ? <EyeOff /> : <EyeOn />}
+                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
                 </IconButton>
               </InputAdornment>
             )
