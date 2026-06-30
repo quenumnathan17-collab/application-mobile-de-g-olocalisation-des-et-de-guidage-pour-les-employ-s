@@ -53,7 +53,7 @@ const btnSx = {
 };
 
 // ── LOGIN FORM ────────────────────────────────────────────────────────────────
-function LoginForm({ onLoginSuccess }) {
+function LoginForm({ onLoginSuccess, apiUrl = '' }) {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword]     = useState('');
   const [loading, setLoading]       = useState(false);
@@ -70,7 +70,7 @@ function LoginForm({ onLoginSuccess }) {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const res  = await fetch('/api/login', {
+      const res  = await fetch(`${apiUrl}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier: identifier.trim(), password }),
@@ -151,7 +151,7 @@ function LoginForm({ onLoginSuccess }) {
               onClick={async () => {
                 setResetLoading(true); setResetErr('');
                 try {
-                  const res  = await fetch('/api/reset-password', {
+                  const res  = await fetch(`${apiUrl}/api/reset-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ identifier: resetId }),
@@ -175,7 +175,7 @@ function LoginForm({ onLoginSuccess }) {
 }
 
 // ── REGISTER FORM ─────────────────────────────────────────────────────────────
-function RegisterForm({ onSwitchToLogin }) {
+function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
   const [form, setForm] = useState({
     name: '', email: '', phone: '', password: '', confirmPassword: '',
   });
@@ -228,7 +228,7 @@ function RegisterForm({ onSwitchToLogin }) {
 
     setLoading(true);
     try {
-      const res  = await fetch('/api/register', {
+      const res  = await fetch(`${apiUrl}/api/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -366,7 +366,7 @@ function RegisterForm({ onSwitchToLogin }) {
 }
 
 // ── MAIN LOGIN PAGE ───────────────────────────────────────────────────────────
-export default function Login({ onLoginSuccess }) {
+export default function Login({ onLoginSuccess, apiUrl = '' }) {
   const [tab, setTab] = useState(0); // 0 = connexion, 1 = inscription
 
   return (
@@ -510,10 +510,10 @@ export default function Login({ onLoginSuccess }) {
 
           {/* Tab panels */}
           <Box role="tabpanel" id="panel-login"    aria-labelledby="tab-login"    hidden={tab !== 0}>
-            {tab === 0 && <LoginForm onLoginSuccess={onLoginSuccess} />}
+            {tab === 0 && <LoginForm onLoginSuccess={onLoginSuccess} apiUrl={apiUrl} />}
           </Box>
           <Box role="tabpanel" id="panel-register" aria-labelledby="tab-register" hidden={tab !== 1}>
-            {tab === 1 && <RegisterForm onSwitchToLogin={() => setTab(0)} />}
+            {tab === 1 && <RegisterForm onSwitchToLogin={() => setTab(0)} apiUrl={apiUrl} />}
           </Box>
         </Paper>
 

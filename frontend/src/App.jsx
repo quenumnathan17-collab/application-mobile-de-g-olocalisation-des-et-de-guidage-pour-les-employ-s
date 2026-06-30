@@ -302,7 +302,7 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return <Login onLoginSuccess={setCurrentUser} />;
+    return <Login onLoginSuccess={setCurrentUser} apiUrl={API_URL} />;
   }
 
   // Force layout based on role
