@@ -1507,17 +1507,22 @@ export default function MobileSimulator({
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {/* Google Maps — real deep link */}
+              {/* Google Maps — named destination with address text */}
               <button
                 className="btn btn-secondary"
                 style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  if (client?.gps) {
-                    window.open(
-                      `https://www.google.com/maps/dir/?api=1&origin=${activeEmployee?.gps?.lat},${activeEmployee?.gps?.lng}&destination=${client.gps.lat},${client.gps.lng}&travelmode=driving`,
-                      '_blank'
-                    );
+                  if (client) {
+                    // Use address text so Google Maps shows the proper place name
+                    const destination = encodeURIComponent(`${client.name}, ${client.address}`);
+                    const origin = activeEmployee?.gps
+                      ? `${activeEmployee.gps.lat},${activeEmployee.gps.lng}`
+                      : '';
+                    const url = origin
+                      ? `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=driving`
+                      : `https://www.google.com/maps/search/?api=1&query=${destination}`;
+                    window.open(url, '_blank');
                   }
                   setShowGpsChooser(false);
                 }}
@@ -1525,17 +1530,20 @@ export default function MobileSimulator({
                 📍 Google Maps
               </button>
 
-              {/* Waze — real deep link */}
+              {/* Waze — address query for named place */}
               <button
                 className="btn btn-secondary"
                 style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  if (client?.gps) {
-                    window.open(
-                      `https://waze.com/ul?ll=${client.gps.lat},${client.gps.lng}&navigate=yes&zoom=17`,
-                      '_blank'
-                    );
+                  if (client) {
+                    // Waze supports both `q` (named search) and `ll` (coordinates) — use name + coords
+                    const q = encodeURIComponent(`${client.name}, ${client.address}`);
+                    const ll = client.gps ? `${client.gps.lat},${client.gps.lng}` : '';
+                    const url = ll
+                      ? `https://waze.com/ul?ll=${ll}&navigate=yes&zoom=17&q=${q}`
+                      : `https://waze.com/ul?q=${q}&navigate=yes`;
+                    window.open(url, '_blank');
                   }
                   setShowGpsChooser(false);
                 }}
@@ -1543,17 +1551,22 @@ export default function MobileSimulator({
                 🚙 Waze
               </button>
 
-              {/* Apple Maps — real deep link (works on iOS Safari) */}
+              {/* Apple Plans — named address as destination */}
               <button
                 className="btn btn-secondary"
                 style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  if (client?.gps) {
-                    window.open(
-                      `https://maps.apple.com/?daddr=${client.gps.lat},${client.gps.lng}&dirflg=d`,
-                      '_blank'
-                    );
+                  if (client) {
+                    // Apple Maps: daddr supports address text for named display
+                    const daddr = encodeURIComponent(`${client.name}, ${client.address}`);
+                    const saddr = activeEmployee?.gps
+                      ? `${activeEmployee.gps.lat},${activeEmployee.gps.lng}`
+                      : '';
+                    const url = saddr
+                      ? `https://maps.apple.com/?saddr=${saddr}&daddr=${daddr}&dirflg=d`
+                      : `https://maps.apple.com/?q=${daddr}`;
+                    window.open(url, '_blank');
                   }
                   setShowGpsChooser(false);
                 }}
