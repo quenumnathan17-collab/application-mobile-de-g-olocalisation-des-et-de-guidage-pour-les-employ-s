@@ -108,11 +108,21 @@ export default function AdminDashboard({
   const [newClientName, setNewClientName] = useState('');
   const [newClientType, setNewClientType] = useState('entreprise');
   const [newClientAddress, setNewClientAddress] = useState('');
+  const [newClientCommune, setNewClientCommune] = useState(''); // Commune d'Abidjan
   const [newClientPhone, setNewClientPhone] = useState('');
   const [newClientEmail, setNewClientEmail] = useState('');
   const [newClientContactName, setNewClientContactName] = useState('');
   const [newClientNotes, setNewClientNotes] = useState('');
   const [geocodingAlert, setGeocodingAlert] = useState(null); // { type: 'success'|'error', text: '' }
+  // Manual GPS override
+  const [showManualGps, setShowManualGps] = useState(false);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  // Address autocomplete
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [geocodingLoading, setGeocodingLoading] = useState(false);
+  const autocompleteTimer = useRef(null);
 
   const [showEditClient, setShowEditClient] = useState(false);
   const [editClientData, setEditClientData] = useState(null);
@@ -301,32 +311,94 @@ export default function AdminDashboard({
     });
   }, [currentTheme]);
 
+  // ── Geocoding cascade: try progressively simpler queries until one succeeds ──
+  const geocodeWithCascade = async (address, commune, clientName) => {
+    const communeSuffix = commune ? `, ${commune}, Abidjan, Côte d'Ivoire` : ', Abidjan, Côte d\'Ivoire';
+    const queries = [
+      address + communeSuffix,                          // 1. Full address + commune + city
+      address + ', Abidjan, Côte d\'Ivoire',            // 2. Full address + city only
+      (commune || 'Abidjan') + ', Côte d\'Ivoire',      // 3. Commune / neighborhood only
+      clientName + ', ' + (commune || 'Abidjan'),        // 4. Business name + commune
+    ];
+    for (let i = 0; i < queries.length; i++) {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queries[i])}&countrycodes=ci&format=json&limit=1`,
+          { headers: { 'Accept-Language': 'fr' } }
+        );
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return {
+            lat: parseFloat(data[0].lat),
+            lng: parseFloat(data[0].lon),
+            strategy: i,  // 0=exact, 1=city, 2=commune, 3=name
+            displayName: data[0].display_name
+          };
+        }
+      } catch (_) { /* continue to next strategy */ }
+    }
+    return null;
+  };
+
+  // ── Address autocomplete (debounced 450ms) ──
+  const handleAddressAutocomplete = (value) => {
+    setNewClientAddress(value);
+    setShowSuggestions(false);
+    if (autocompleteTimer.current) clearTimeout(autocompleteTimer.current);
+    if (value.length < 3) { setAddressSuggestions([]); return; }
+    autocompleteTimer.current = setTimeout(async () => {
+      try {
+        const commune = newClientCommune ? `, ${newClientCommune}, Abidjan` : ', Abidjan';
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(value + commune)}&countrycodes=ci&format=json&limit=5`,
+          { headers: { 'Accept-Language': 'fr' } }
+        );
+        const data = await res.json();
+        setAddressSuggestions(data || []);
+        setShowSuggestions(data && data.length > 0);
+      } catch (_) { setAddressSuggestions([]); }
+    }, 450);
+  };
+
   const handleAddClientSubmit = async (e) => {
     e.preventDefault();
     setGeocodingAlert(null);
+    setGeocodingLoading(true);
 
     try {
-      // Geocoding with OpenStreetMap (Nominatim) - 100% Gratuit
-      const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(newClientAddress)}&countrycodes=ci&format=json&limit=1`);
-      const dataGeo = await resGeo.json();
+      let location;
 
-      if (!dataGeo || dataGeo.length === 0) {
-        setGeocodingAlert({
-          type: 'error',
-          text: "Échec du géocodage : L'adresse est introuvable. Veuillez préciser (ex: Cocody, Abidjan)."
-        });
-        return;
+      // ── Mode GPS manuel ──
+      if (showManualGps && manualLat && manualLng) {
+        const lat = parseFloat(manualLat.replace(',', '.'));
+        const lng = parseFloat(manualLng.replace(',', '.'));
+        if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+          setGeocodingAlert({ type: 'error', text: 'Coordonnées GPS invalides. Vérifiez la latitude (ex: 5.3211) et la longitude (ex: -4.0180).' });
+          setGeocodingLoading(false);
+          return;
+        }
+        location = { lat, lng, strategy: -1 };
+      } else {
+        // ── Géocodage en cascade ──
+        location = await geocodeWithCascade(newClientAddress, newClientCommune, newClientName);
+        if (!location) {
+          setGeocodingAlert({
+            type: 'error',
+            text: `Adresse introuvable après plusieurs tentatives. Astuce : essayez un nom de rue connu, ou activez la saisie GPS manuelle pour entrer les coordonnées directement.`
+          });
+          setGeocodingLoading(false);
+          return;
+        }
       }
 
-      const location = {
-        lat: parseFloat(dataGeo[0].lat),
-        lng: parseFloat(dataGeo[0].lon)
-      };
+      const fullAddress = newClientCommune
+        ? `${newClientAddress}, ${newClientCommune}, Abidjan`
+        : newClientAddress;
 
       const savedClient = await addClient({
         name: newClientName,
         type: newClientType,
-        address: newClientAddress,
+        address: fullAddress,
         lat: location.lat,
         lng: location.lng,
         phone: newClientPhone,
@@ -335,63 +407,78 @@ export default function AdminDashboard({
         notes: newClientNotes
       });
 
-      setNewOpClient(savedClient.id); // Auto-select this client in the operations assignment modal if open
+      setNewOpClient(savedClient.id);
+
+      const strategyLabels = ['adresse exacte', 'ville', 'commune/quartier', 'nom du client'];
+      const strategyMsg = location.strategy >= 0
+        ? ` (via ${strategyLabels[location.strategy]})`
+        : ' (GPS manuel)';
 
       setGeocodingAlert({
-        type: 'success',
-        text: `Géocodage réussi ! Coordonnées trouvées : Lat ${savedClient.gps.lat.toFixed(4)}, Lng ${savedClient.gps.lng.toFixed(4)}`
+        type: location.strategy > 0 ? 'warning' : 'success',
+        text: `✅ Géocodage réussi${strategyMsg} — Lat ${savedClient.gps.lat.toFixed(4)}, Lng ${savedClient.gps.lng.toFixed(4)}`
       });
 
       setTimeout(() => {
         setShowAddClient(false);
-        setNewClientName('');
-        setNewClientAddress('');
-        setNewClientPhone('');
-        setNewClientEmail('');
-        setNewClientContactName('');
-        setNewClientNotes('');
-        setGeocodingAlert(null);
-      }, 1500);
+        setNewClientName(''); setNewClientAddress(''); setNewClientCommune('');
+        setNewClientPhone(''); setNewClientEmail('');
+        setNewClientContactName(''); setNewClientNotes('');
+        setShowManualGps(false); setManualLat(''); setManualLng('');
+        setAddressSuggestions([]); setGeocodingAlert(null);
+      }, 1800);
     } catch (err) {
-      setGeocodingAlert({
-        type: 'error',
-        text: err.message
-      });
+      setGeocodingAlert({ type: 'error', text: err.message });
+    } finally {
+      setGeocodingLoading(false);
     }
   };
 
   const handleEditClientSubmit = async (e) => {
     e.preventDefault();
     setGeocodingAlert(null);
+    setGeocodingLoading(true);
 
     try {
-      // Geocoding with OpenStreetMap (Nominatim) - 100% Gratuit
-      const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(editClientData.address)}&countrycodes=ci&format=json&limit=1`);
-      const dataGeo = await resGeo.json();
+      let location;
 
-      if (!dataGeo || dataGeo.length === 0) {
+      if (editClientData.manualLat && editClientData.manualLng) {
+        const lat = parseFloat(String(editClientData.manualLat).replace(',', '.'));
+        const lng = parseFloat(String(editClientData.manualLng).replace(',', '.'));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          location = { lat, lng, strategy: -1 };
+        }
+      }
+
+      if (!location) {
+        location = await geocodeWithCascade(
+          editClientData.address,
+          editClientData.commune || '',
+          editClientData.name
+        );
+      }
+
+      if (!location) {
         setGeocodingAlert({
           type: 'error',
-          text: "Échec du géocodage : L'adresse est introuvable. Veuillez préciser (ex: Cocody, Abidjan)."
+          text: `Adresse introuvable. Utilisez la saisie GPS manuelle pour entrer les coordonnées.`
         });
+        setGeocodingLoading(false);
         return;
       }
 
-      const location = {
-        lat: parseFloat(dataGeo[0].lat),
-        lng: parseFloat(dataGeo[0].lon)
-      };
+      const fullAddress = editClientData.commune
+        ? `${editClientData.address}, ${editClientData.commune}, Abidjan`
+        : editClientData.address;
 
       await updateClient({
         ...editClientData,
+        address: fullAddress,
         lat: location.lat,
         lng: location.lng
       });
 
-      setGeocodingAlert({
-        type: 'success',
-        text: `Mise à jour et Géocodage réussis !`
-      });
+      setGeocodingAlert({ type: 'success', text: `✅ Mise à jour et géocodage réussis !` });
 
       setTimeout(() => {
         setShowEditClient(false);
@@ -399,10 +486,9 @@ export default function AdminDashboard({
         setGeocodingAlert(null);
       }, 1500);
     } catch (err) {
-      setGeocodingAlert({
-        type: 'error',
-        text: err.message
-      });
+      setGeocodingAlert({ type: 'error', text: err.message });
+    } finally {
+      setGeocodingLoading(false);
     }
   };
 
@@ -1543,15 +1629,107 @@ export default function AdminDashboard({
                 </Select>
               </FormControl>
 
-              <TextField
-                label="Adresse Postale Complète"
-                required
-                fullWidth
-                placeholder="Ex: Boulevard Giscard d'Estaing, Marcory, Abidjan"
-                value={newClientAddress}
-                onChange={(e) => setNewClientAddress(e.target.value)}
-                helperText="💡 L'adresse sera géocodée automatiquement par notre moteur cartographique à Abidjan."
-              />
+              {/* ── Adresse + autocomplétion ── */}
+              <Box sx={{ position: 'relative' }}>
+                <TextField
+                  label="Adresse (rue, immeuble, lieu-dit)"
+                  required={!showManualGps}
+                  fullWidth
+                  placeholder="Ex: Bd Giscard d'Estaing, Immeuble Alliance, Rue 12…"
+                  value={newClientAddress}
+                  onChange={(e) => handleAddressAutocomplete(e.target.value)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  helperText={showManualGps ? '🧭 Mode GPS manuel activé — coordonnées utilisées à la place.' : '💡 Tapez pour voir des suggestions d\'adresses à Abidjan.'}
+                />
+                {showSuggestions && addressSuggestions.length > 0 && (
+                  <Box sx={{
+                    position: 'absolute', zIndex: 1300, top: '100%', left: 0, right: 0,
+                    bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider',
+                    borderRadius: 2, boxShadow: 4, maxHeight: 200, overflowY: 'auto', mt: 0.5
+                  }}>
+                    {addressSuggestions.map((s, i) => (
+                      <Box key={i} sx={{
+                        p: 1.25, cursor: 'pointer', fontSize: '0.82rem',
+                        borderBottom: i < addressSuggestions.length - 1 ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                        '&:hover': { bgcolor: 'action.hover' }
+                      }}
+                        onMouseDown={() => {
+                          const parts = s.display_name.split(',');
+                          setNewClientAddress(parts.slice(0, 2).join(',').trim());
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        📍 {s.display_name}
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+              </Box>
+
+              {/* ── Commune/Quartier ── */}
+              <FormControl fullWidth>
+                <InputLabel>Commune / Quartier d'Abidjan</InputLabel>
+                <Select
+                  label="Commune / Quartier d'Abidjan"
+                  value={newClientCommune}
+                  onChange={(e) => setNewClientCommune(e.target.value)}
+                >
+                  <MenuItem value="">— Non précisé —</MenuItem>
+                  <MenuItem value="Plateau">🏙️ Plateau</MenuItem>
+                  <MenuItem value="Cocody">🌳 Cocody</MenuItem>
+                  <MenuItem value="Marcory">🏘️ Marcory</MenuItem>
+                  <MenuItem value="Treichville">⚓ Treichville</MenuItem>
+                  <MenuItem value="Adjamé">🏪 Adjamé</MenuItem>
+                  <MenuItem value="Yopougon">🏭 Yopougon</MenuItem>
+                  <MenuItem value="Abobo">🏙️ Abobo</MenuItem>
+                  <MenuItem value="Koumassi">🏗️ Koumassi</MenuItem>
+                  <MenuItem value="Port-Bouët">✈️ Port-Bouët</MenuItem>
+                  <MenuItem value="Bingerville">🌴 Bingerville</MenuItem>
+                  <MenuItem value="Anyama">🌾 Anyama</MenuItem>
+                  <MenuItem value="Songon">🌿 Songon</MenuItem>
+                </Select>
+              </FormControl>
+
+              {/* ── GPS Manuel (toggle) ── */}
+              <Box>
+                <Button
+                  size="small"
+                  variant={showManualGps ? 'contained' : 'outlined'}
+                  color={showManualGps ? 'secondary' : 'inherit'}
+                  startIcon={<LocationOnIcon />}
+                  onClick={() => setShowManualGps(v => !v)}
+                  sx={{ mb: showManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
+                >
+                  {showManualGps ? '🧭 GPS Manuel activé' : '📐 Saisir les coordonnées GPS manuellement'}
+                </Button>
+                {showManualGps && (
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <TextField
+                        label="Latitude"
+                        fullWidth
+                        size="small"
+                        placeholder="Ex: 5.3211"
+                        value={manualLat}
+                        onChange={(e) => setManualLat(e.target.value)}
+                        helperText="Latitude (N/S)"
+                      />
+                    </Grid>
+                    <Grid item xs={6}>
+                      <TextField
+                        label="Longitude"
+                        fullWidth
+                        size="small"
+                        placeholder="Ex: -4.0180"
+                        value={manualLng}
+                        onChange={(e) => setManualLng(e.target.value)}
+                        helperText="Longitude (E/W)"
+                      />
+                    </Grid>
+                  </Grid>
+                )}
+              </Box>
 
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={6}>
@@ -1588,15 +1766,15 @@ export default function AdminDashboard({
                 fullWidth
                 multiline
                 rows={3}
-                placeholder="Ex: Portail bleu juste à côté de la pharmacie, 2ème étage..."
+                placeholder="Ex: Portail bleu à côté de la pharmacie, 2ème étage, demander Mme Konan…"
                 value={newClientNotes}
                 onChange={(e) => setNewClientNotes(e.target.value)}
               />
 
               {geocodingAlert && (
-                <Alert 
-                  severity={geocodingAlert.type} 
-                  icon={geocodingAlert.type === 'success' ? <CheckCircleIcon /> : <WarningIcon />}
+                <Alert
+                  severity={geocodingAlert.type}
+                  icon={geocodingAlert.type === 'success' ? <CheckCircleIcon /> : geocodingAlert.type === 'warning' ? <WarningIcon /> : <ErrorIcon />}
                 >
                   {geocodingAlert.text}
                 </Alert>
@@ -1610,12 +1788,12 @@ export default function AdminDashboard({
               >
                 Annuler
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 variant="contained"
-                disabled={geocodingAlert?.type === 'success'}
+                disabled={geocodingAlert?.type === 'success' || geocodingLoading}
               >
-                Enregistrer & Géocoder
+                {geocodingLoading ? '🔍 Géocodage…' : '🗺️ Enregistrer & Géocoder'}
               </Button>
             </DialogActions>
           </form>
@@ -1649,13 +1827,77 @@ export default function AdminDashboard({
                 </FormControl>
 
                 <TextField
-                  label="Adresse Postale Complète"
-                  required
+                  label="Adresse (rue, immeuble, lieu-dit)"
+                  required={!editClientData?.useManualGps}
                   fullWidth
                   value={editClientData.address}
                   onChange={(e) => setEditClientData({ ...editClientData, address: e.target.value })}
-                  helperText="💡 L'adresse sera géocodée automatiquement par Google Maps."
+                  helperText="💡 Modifiez pour re-géocoder. Ajoutez un quartier pour améliorer la précision."
                 />
+
+                {/* Commune edit */}
+                <FormControl fullWidth>
+                  <InputLabel>Commune / Quartier</InputLabel>
+                  <Select
+                    label="Commune / Quartier"
+                    value={editClientData.commune || ''}
+                    onChange={(e) => setEditClientData({ ...editClientData, commune: e.target.value })}
+                  >
+                    <MenuItem value="">— Non précisé —</MenuItem>
+                    <MenuItem value="Plateau">🏙️ Plateau</MenuItem>
+                    <MenuItem value="Cocody">🌳 Cocody</MenuItem>
+                    <MenuItem value="Marcory">🏘️ Marcory</MenuItem>
+                    <MenuItem value="Treichville">⚓ Treichville</MenuItem>
+                    <MenuItem value="Adjamé">🏪 Adjamé</MenuItem>
+                    <MenuItem value="Yopougon">🏭 Yopougon</MenuItem>
+                    <MenuItem value="Abobo">🏙️ Abobo</MenuItem>
+                    <MenuItem value="Koumassi">🏗️ Koumassi</MenuItem>
+                    <MenuItem value="Port-Bouët">✈️ Port-Bouët</MenuItem>
+                    <MenuItem value="Bingerville">🌴 Bingerville</MenuItem>
+                    <MenuItem value="Anyama">🌾 Anyama</MenuItem>
+                    <MenuItem value="Songon">🌿 Songon</MenuItem>
+                  </Select>
+                </FormControl>
+
+                {/* GPS manuel edit */}
+                <Box>
+                  <Button
+                    size="small"
+                    variant={editClientData?.useManualGps ? 'contained' : 'outlined'}
+                    color={editClientData?.useManualGps ? 'secondary' : 'inherit'}
+                    startIcon={<LocationOnIcon />}
+                    onClick={() => setEditClientData({ ...editClientData, useManualGps: !editClientData.useManualGps })}
+                    sx={{ mb: editClientData?.useManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
+                  >
+                    {editClientData?.useManualGps ? '🧭 GPS Manuel activé' : '📐 Saisir coordonnées GPS manuellement'}
+                  </Button>
+                  {editClientData?.useManualGps && (
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <TextField
+                          label="Latitude"
+                          fullWidth
+                          size="small"
+                          placeholder="Ex: 5.3211"
+                          value={editClientData.manualLat || ''}
+                          onChange={(e) => setEditClientData({ ...editClientData, manualLat: e.target.value })}
+                          helperText={`Actuel: ${editClientData.gps?.lat?.toFixed(5) || '—'}`}
+                        />
+                      </Grid>
+                      <Grid item xs={6}>
+                        <TextField
+                          label="Longitude"
+                          fullWidth
+                          size="small"
+                          placeholder="Ex: -4.0180"
+                          value={editClientData.manualLng || ''}
+                          onChange={(e) => setEditClientData({ ...editClientData, manualLng: e.target.value })}
+                          helperText={`Actuel: ${editClientData.gps?.lng?.toFixed(5) || '—'}`}
+                        />
+                      </Grid>
+                    </Grid>
+                  )}
+                </Box>
 
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -1710,12 +1952,12 @@ export default function AdminDashboard({
                 >
                   Annuler
                 </Button>
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   variant="contained"
-                  disabled={geocodingAlert?.type === 'success'}
+                  disabled={geocodingAlert?.type === 'success' || geocodingLoading}
                 >
-                  Mettre à jour & Géocoder
+                  {geocodingLoading ? '🔍 Géocodage…' : '🗺️ Mettre à jour & Géocoder'}
                 </Button>
               </DialogActions>
             </form>
