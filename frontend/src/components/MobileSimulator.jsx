@@ -1008,49 +1008,7 @@ export default function MobileSimulator({
                       </div>
                     )}
 
-                    {/* GPS Chooser Modal */}
-                    {showGpsChooser && selectedOp && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'flex-end' }}>
-                        <div style={{ backgroundColor: 'white', width: '100%', padding: '1.5rem', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}>
-                          <h4 style={{ margin: '0 0 1rem 0', textAlign: 'center' }}>Lancer la navigation avec :</h4>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            <button 
-                              className="btn" 
-                              style={{ backgroundColor: '#e2e8f0', color: '#0f172a', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', padding: '0.75rem 1rem' }}
-                              onClick={() => {
-                                const client = clients.find(c => c.id === selectedOp.clientId);
-                                if (client) {
-                                  window.open(`https://www.google.com/maps/dir/?api=1&destination=${client.gps.lat},${client.gps.lng}`, '_blank');
-                                }
-                                setShowGpsChooser(false);
-                              }}
-                            >
-                              📍 Google Maps
-                            </button>
-                            <button 
-                              className="btn" 
-                              style={{ backgroundColor: '#e2e8f0', color: '#0f172a', display: 'flex', justifyContent: 'flex-start', alignItems: 'center', padding: '0.75rem 1rem' }}
-                              onClick={() => {
-                                const client = clients.find(c => c.id === selectedOp.clientId);
-                                if (client) {
-                                  window.open(`https://waze.com/ul?ll=${client.gps.lat},${client.gps.lng}&navigate=yes`, '_blank');
-                                }
-                                setShowGpsChooser(false);
-                              }}
-                            >
-                              🚗 Waze
-                            </button>
-                            <button 
-                              className="btn btn-secondary" 
-                              style={{ marginTop: '0.5rem' }}
-                              onClick={() => setShowGpsChooser(false)}
-                            >
-                              Annuler
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                    {/* GPS Chooser Modal — handled by outer modal below */}
 
                   </div>
                 ) : mobileTab === 'list' ? (
@@ -1540,53 +1498,77 @@ export default function MobileSimulator({
         </div>
       )}
 
-      {/* EXTERNAL GPS APP SIMULATION CHOOSER MODAL */}
-      {showGpsChooser && (
-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="modal-content" style={{ maxWidth: '340px', padding: '1.5rem' }}>
-            <h3 style={{ fontSize: '1.125rem', marginBottom: '1rem', textAlign: 'center' }}>
-              Ouvrir l'itinéraire avec :
+      {/* EXTERNAL GPS APP CHOOSER MODAL */}
+      {showGpsChooser && selectedOp && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }}>
+          <div className="modal-content" style={{ maxWidth: '340px', padding: '1.75rem', borderRadius: '20px' }}>
+            <h3 style={{ fontSize: '1.125rem', marginBottom: '1.25rem', textAlign: 'center', fontWeight: 700 }}>
+              🧭 Ouvrir l'itinéraire avec :
             </h3>
-            
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button 
-                className="btn btn-secondary" 
-                style={{ justifyContent: 'flex-start', padding: '0.75rem' }}
+              {/* Google Maps — real deep link */}
+              <button
+                className="btn btn-secondary"
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
-                  setShowGpsChooser(false);
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  alert(`Redirection vers Google Maps : navigation de (${activeEmployee.gps.lat.toFixed(4)}, ${activeEmployee.gps.lng.toFixed(4)}) vers (${client.gps.lat.toFixed(4)}, ${client.gps.lng.toFixed(4)})`);
+                  if (client?.gps) {
+                    window.open(
+                      `https://www.google.com/maps/dir/?api=1&origin=${activeEmployee?.gps?.lat},${activeEmployee?.gps?.lng}&destination=${client.gps.lat},${client.gps.lng}&travelmode=driving`,
+                      '_blank'
+                    );
+                  }
+                  setShowGpsChooser(false);
                 }}
               >
-                🚗 Google Maps
+                📍 Google Maps
               </button>
-              <button 
-                className="btn btn-secondary" 
-                style={{ justifyContent: 'flex-start', padding: '0.75rem' }}
+
+              {/* Waze — real deep link */}
+              <button
+                className="btn btn-secondary"
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
-                  setShowGpsChooser(false);
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  alert(`Redirection vers Waze avec destination : ${client.name} (${client.address})`);
+                  if (client?.gps) {
+                    window.open(
+                      `https://waze.com/ul?ll=${client.gps.lat},${client.gps.lng}&navigate=yes&zoom=17`,
+                      '_blank'
+                    );
+                  }
+                  setShowGpsChooser(false);
                 }}
               >
                 🚙 Waze
               </button>
-              <button 
-                className="btn btn-secondary" 
-                style={{ justifyContent: 'flex-start', padding: '0.75rem' }}
+
+              {/* Apple Maps — real deep link (works on iOS Safari) */}
+              <button
+                className="btn btn-secondary"
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
-                  setShowGpsChooser(false);
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  alert(`Redirection vers Apple Maps (iOS) avec destination : lat:${client.gps.lat}, lng:${client.gps.lng}`);
+                  if (client?.gps) {
+                    window.open(
+                      `https://maps.apple.com/?daddr=${client.gps.lat},${client.gps.lng}&dirflg=d`,
+                      '_blank'
+                    );
+                  }
+                  setShowGpsChooser(false);
                 }}
               >
                 🗺️ Apple Plans
               </button>
             </div>
-            
-            <div className="modal-footer" style={{ marginTop: '1rem', justifyContent: 'center' }}>
-              <button className="btn btn-danger" style={{ padding: '0.4rem 1rem' }} onClick={() => setShowGpsChooser(false)}>
-                Fermer
+
+            <div className="modal-footer" style={{ marginTop: '1.25rem', justifyContent: 'center' }}>
+              <button
+                className="btn btn-secondary"
+                style={{ padding: '0.5rem 1.5rem', borderRadius: '10px', fontSize: '0.9rem' }}
+                onClick={() => setShowGpsChooser(false)}
+              >
+                Annuler
               </button>
             </div>
           </div>
