@@ -1551,27 +1551,26 @@ export default function MobileSimulator({
                 🚙 Waze
               </button>
 
-              {/* Apple Plans — named address as destination */}
+              {/* OpenStreetMap — excellente couverture Afrique de l'Ouest, gratuit */}
               <button
                 className="btn btn-secondary"
                 style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
-                  if (client) {
-                    // Apple Maps: daddr supports address text for named display
-                    const daddr = encodeURIComponent(`${client.name}, ${client.address}`);
-                    const saddr = activeEmployee?.gps
+                  if (client?.gps) {
+                    const orig = activeEmployee?.gps
                       ? `${activeEmployee.gps.lat},${activeEmployee.gps.lng}`
                       : '';
-                    const url = saddr
-                      ? `https://maps.apple.com/?saddr=${saddr}&daddr=${daddr}&dirflg=d`
-                      : `https://maps.apple.com/?q=${daddr}`;
+                    const dest = `${client.gps.lat},${client.gps.lng}`;
+                    const url = orig
+                      ? `https://www.openstreetmap.org/directions?route=${orig};${dest}&engine=fossgis_osrm_car`
+                      : `https://www.openstreetmap.org/?mlat=${dest.split(',')[0]}&mlon=${dest.split(',')[1]}&zoom=16`;
                     window.open(url, '_blank');
                   }
                   setShowGpsChooser(false);
                 }}
               >
-                🗺️ Apple Plans
+                🌍 OpenStreetMap
               </button>
             </div>
 
