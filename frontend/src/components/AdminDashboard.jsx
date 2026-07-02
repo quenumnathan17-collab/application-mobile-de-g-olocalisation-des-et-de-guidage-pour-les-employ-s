@@ -36,7 +36,8 @@ import {
   ListItemIcon,
   ListItemText,
   ListItemAvatar,
-  IconButton
+  IconButton,
+  Autocomplete
 } from '@mui/material';
 import {
   Map as MapIcon,
@@ -1667,29 +1668,28 @@ export default function AdminDashboard({
                 )}
               </Box>
 
-              {/* ── Commune/Quartier ── */}
-              <FormControl fullWidth>
-                <InputLabel>Commune / Quartier d'Abidjan</InputLabel>
-                <Select
-                  label="Commune / Quartier d'Abidjan"
-                  value={newClientCommune}
-                  onChange={(e) => setNewClientCommune(e.target.value)}
-                >
-                  <MenuItem value="">— Non précisé —</MenuItem>
-                  <MenuItem value="Plateau">🏙️ Plateau</MenuItem>
-                  <MenuItem value="Cocody">🌳 Cocody</MenuItem>
-                  <MenuItem value="Marcory">🏘️ Marcory</MenuItem>
-                  <MenuItem value="Treichville">⚓ Treichville</MenuItem>
-                  <MenuItem value="Adjamé">🏪 Adjamé</MenuItem>
-                  <MenuItem value="Yopougon">🏭 Yopougon</MenuItem>
-                  <MenuItem value="Abobo">🏙️ Abobo</MenuItem>
-                  <MenuItem value="Koumassi">🏗️ Koumassi</MenuItem>
-                  <MenuItem value="Port-Bouët">✈️ Port-Bouët</MenuItem>
-                  <MenuItem value="Bingerville">🌴 Bingerville</MenuItem>
-                  <MenuItem value="Anyama">🌾 Anyama</MenuItem>
-                  <MenuItem value="Songon">🌿 Songon</MenuItem>
-                </Select>
-              </FormControl>
+              {/* ── Commune/Quartier — saisie libre ou sélection ── */}
+              <Autocomplete
+                freeSolo
+                options={[
+                  'Plateau', 'Cocody', 'Marcory', 'Treichville', 'Adjamé',
+                  'Yopougon', 'Abobo', 'Koumassi', 'Port-Bouët', 'Bingerville',
+                  'Anyama', 'Songon', 'Angré', 'Riviera', '2 Plateaux',
+                  'Zone 4', 'Zone 3', 'Zone 2', 'Zone 1', 'Biétry',
+                  'Vridi', 'Gonzagueville', 'Niangon', 'Selmer', 'Sogefiha',
+                  'Williamsville', 'Adjamé Liberté', 'N\'Dotré', 'Gbinta', 'Bonoumin'
+                ]}
+                value={newClientCommune}
+                onInputChange={(_, value) => setNewClientCommune(value)}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Commune / Quartier d'Abidjan"
+                    placeholder="Sélectionnez ou tapez un quartier…"
+                    helperText="💡 Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
+                  />
+                )}
+              />
 
               {/* ── GPS Manuel (toggle) ── */}
               <Box>
@@ -1835,29 +1835,28 @@ export default function AdminDashboard({
                   helperText="💡 Modifiez pour re-géocoder. Ajoutez un quartier pour améliorer la précision."
                 />
 
-                {/* Commune edit */}
-                <FormControl fullWidth>
-                  <InputLabel>Commune / Quartier</InputLabel>
-                  <Select
-                    label="Commune / Quartier"
-                    value={editClientData.commune || ''}
-                    onChange={(e) => setEditClientData({ ...editClientData, commune: e.target.value })}
-                  >
-                    <MenuItem value="">— Non précisé —</MenuItem>
-                    <MenuItem value="Plateau">🏙️ Plateau</MenuItem>
-                    <MenuItem value="Cocody">🌳 Cocody</MenuItem>
-                    <MenuItem value="Marcory">🏘️ Marcory</MenuItem>
-                    <MenuItem value="Treichville">⚓ Treichville</MenuItem>
-                    <MenuItem value="Adjamé">🏪 Adjamé</MenuItem>
-                    <MenuItem value="Yopougon">🏭 Yopougon</MenuItem>
-                    <MenuItem value="Abobo">🏙️ Abobo</MenuItem>
-                    <MenuItem value="Koumassi">🏗️ Koumassi</MenuItem>
-                    <MenuItem value="Port-Bouët">✈️ Port-Bouët</MenuItem>
-                    <MenuItem value="Bingerville">🌴 Bingerville</MenuItem>
-                    <MenuItem value="Anyama">🌾 Anyama</MenuItem>
-                    <MenuItem value="Songon">🌿 Songon</MenuItem>
-                  </Select>
-                </FormControl>
+                {/* Commune edit — saisie libre ou sélection */}
+                <Autocomplete
+                  freeSolo
+                  options={[
+                    'Plateau', 'Cocody', 'Marcory', 'Treichville', 'Adjamé',
+                    'Yopougon', 'Abobo', 'Koumassi', 'Port-Bouët', 'Bingerville',
+                    'Anyama', 'Songon', 'Angré', 'Riviera', '2 Plateaux',
+                    'Zone 4', 'Zone 3', 'Zone 2', 'Zone 1', 'Biétry',
+                    'Vridi', 'Gonzagueville', 'Niangon', 'Selmer', 'Sogefiha',
+                    'Williamsville', 'Adjamé Liberté', "N'Dotré", 'Gbinta', 'Bonoumin'
+                  ]}
+                  value={editClientData.commune || ''}
+                  onInputChange={(_, value) => setEditClientData({ ...editClientData, commune: value })}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Commune / Quartier"
+                      placeholder="Sélectionnez ou tapez un quartier…"
+                      helperText="💡 Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
+                    />
+                  )}
+                />
 
                 {/* GPS manuel edit */}
                 <Box>
