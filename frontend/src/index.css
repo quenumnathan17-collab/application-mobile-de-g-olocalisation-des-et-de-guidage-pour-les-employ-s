@@ -699,8 +699,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Smartphone Wrapper */
 .smartphone-frame {
-  width: 380px;
-  height: 760px;
+  width: 385px;
+  height: min(840px, calc(100vh - 130px));
   background-color: #1a1a2e;
   border: 10px solid #0a0a1a;
   border-radius: 44px;
@@ -763,7 +763,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Simulator Controls */
 .sim-controls-card {
-  width: 380px;
+  width: 385px;
   margin-top: 1.5rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -1626,14 +1626,14 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .smartphone-frame {
-    width: 340px;
-    height: 680px;
+    width: 350px;
+    height: min(740px, calc(100vh - 140px));
     border-width: 8px;
     border-radius: 38px;
   }
 
   .sim-controls-card {
-    width: 340px;
+    width: 350px;
     margin-top: 1rem;
     padding: 1rem;
   }
