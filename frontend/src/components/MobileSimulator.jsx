@@ -231,6 +231,12 @@ export default function MobileSimulator({
   // Real GPS tracking
   useEffect(() => {
     if (!activeEmployeeId) return;
+    
+    // Si l'utilisateur connecté est admin, on ne traque pas sa position comme si c'était celle du technicien
+    if (currentUser && currentUser.role === 'admin') {
+      console.log("Mode simulation admin actif, géolocalisation réelle du navigateur ignorée.");
+      return;
+    }
 
     if ("geolocation" in navigator) {
       const watchId = navigator.geolocation.watchPosition(
@@ -246,7 +252,7 @@ export default function MobileSimulator({
       );
       return () => navigator.geolocation.clearWatch(watchId);
     }
-  }, [activeEmployeeId]);
+  }, [activeEmployeeId, currentUser]);
 
   const currentGps = realGps || activeEmployee?.gps;
 
