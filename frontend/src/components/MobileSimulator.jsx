@@ -5,7 +5,8 @@ import {
   LogOut, Map, List, Navigation, Clock, 
   WifiOff, Search, Compass, ChevronRight, 
   MapPin, CheckCircle2, Play, ExternalLink, RefreshCw,
-  Settings, User, Camera, Lock, Phone, Mail, Save, Eye, EyeOff, CheckCheck, AlertCircle
+  Settings, User, Camera, Lock, Phone, Mail, Save, Eye, EyeOff, CheckCheck, AlertCircle,
+  Monitor, Sun, Moon
 } from 'lucide-react';
 
 export default function MobileSimulator({ 
@@ -20,7 +21,11 @@ export default function MobileSimulator({
   onProfileUpdated,
   layoutMode,
   theme,
-  currentUser
+  currentUser,
+  isMobileScreen = false,
+  portalLogout,
+  toggleTheme,
+  setLayoutMode
 }) {
   const getArrivalTime = (durationMinutes) => {
     const now = new Date();
@@ -293,6 +298,12 @@ export default function MobileSimulator({
           distance: distKm,
           duration: timeMin
         });
+
+        // Set route polyline so the line is drawn on the map and action buttons appear
+        if (routes[0] && routes[0].coordinates) {
+          const coords = routes[0].coordinates.map(c => [c.lat, c.lng]);
+          setRoutePolyline(coords);
+        }
         
         addNotification({
           title: "Itinéraire calculé",
@@ -466,6 +477,20 @@ export default function MobileSimulator({
     }
   }, [mobileTab, layoutMode]);
 
+  // Sync selectedOp with latest operations data from props to avoid stale status buttons
+  useEffect(() => {
+    if (selectedOp) {
+      const freshOp = operations.find(o => o.id === selectedOp.id);
+      if (freshOp) {
+        if (freshOp.status !== selectedOp.status || freshOp.employeeId !== selectedOp.employeeId) {
+          setSelectedOp(freshOp);
+        }
+      } else {
+        setSelectedOp(null);
+      }
+    }
+  }, [operations]);
+
   // Redraw Mobile Map markers and routes
   useEffect(() => {
     if (!activeEmployeeId || !activeEmployee || mobileTab !== 'map' || !mapInstance.current || !markersGroup.current) return;
@@ -506,22 +531,15 @@ export default function MobileSimulator({
       const client = clients.find(c => c.id === op.clientId);
       if (!client) return;
 
+      const pinColor = op.status === 'en cours' ? '#0f9d58' : '#1a73e8';
+      const markerEmoji = client.type === 'entreprise' ? '🏢' : '👤';
       const markerHtml = `
-        <div style="
-          background-color: ${op.status === 'en cours' ? '#10b981' : '#4f46e5'};
-          color: white;
-          width: 28px;
-          height: 28px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-weight: bold;
-          font-size: 12px;
-          border: 2px solid white;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.15);
-        ">
-          ${client.type === 'entreprise' ? '🏢' : '👤'}
+        <div style="position: relative; width: 34px; height: 42px; display: flex; align-items: center; justify-content: center;">
+          <svg width="34" height="42" viewBox="0 0 34 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.25));">
+            <path d="M17 0C7.61 0 0 7.61 0 17C0 29.75 17 42 17 42C17 42 34 29.75 34 17C34 7.61 26.39 0 17 0Z" fill="${pinColor}"/>
+            <circle cx="17" cy="17" r="11" fill="white"/>
+          </svg>
+          <span style="position: absolute; top: 7px; left: 50%; transform: translateX(-50%); font-size: 14px; pointer-events: none;">${markerEmoji}</span>
         </div>
       `;
 
@@ -529,8 +547,8 @@ export default function MobileSimulator({
         icon: L.divIcon({
           html: markerHtml,
           className: '',
-          iconSize: [28, 28],
-          iconAnchor: [14, 14]
+          iconSize: [34, 42],
+          iconAnchor: [17, 42]
         })
       });
 
@@ -668,32 +686,44 @@ export default function MobileSimulator({
           ) : (
             /* 2. ACTIVE APPLICATION APP */
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', minHeight: 0 }}>
-              <div className="mobile-app-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <img src={activeEmployee.avatar} alt={activeEmployee.name} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
-                  <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontSize: '1rem', fontWeight: 800 }}>Vos missions du jour</div>
-                    <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>{activeEmployee.name}</div>
+              {mobileTab !== 'map' && (
+                <div className="mobile-app-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img src={activeEmployee.avatar} alt={activeEmployee.name} style={{ width: '36px', height: '36px', borderRadius: '50%', border: '2px solid white' }} />
+                    <div style={{ textAlign: 'left' }}>
+                      <div style={{ fontSize: '1rem', fontWeight: 800 }}>Vos missions du jour</div>
+                      <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>{activeEmployee.name}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                    {isMobileScreen && toggleTheme && (
+                      <button 
+                        onClick={toggleTheme}
+                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex' }}
+                        title="Changer le thème"
+                      >
+                        {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+                      </button>
+                    )}
+                    {currentUser?.role === 'admin' && setLayoutMode && (
+                      <button 
+                        onClick={() => setLayoutMode('admin')}
+                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex' }}
+                        title="Retour au portail d'administration"
+                      >
+                        <Monitor size={18} />
+                      </button>
+                    )}
+                    <button 
+                      onClick={currentUser?.role === 'employee' && portalLogout ? portalLogout : handleLogout}
+                      style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', display: 'flex' }}
+                      title="Se déconnecter"
+                    >
+                      <LogOut size={18} />
+                    </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  {mobileTab === 'map' && (
-                    <button 
-                      onClick={handleCenterMap}
-                      style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-                      title="Centrer GPS"
-                    >
-                      🎯
-                    </button>
-                  )}
-                  <button 
-                    onClick={handleLogout}
-                    style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
-                  >
-                    <LogOut size={18} />
-                  </button>
-                </div>
-              </div>
+              )}
 
               {/* MOBILE APP BODY */}
               <div className="mobile-app-body">
@@ -702,10 +732,10 @@ export default function MobileSimulator({
                   <div style={{ position: 'relative', width: '100%', flex: 1, minHeight: 0 }}>
                     <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
 
-                    {/* Search and Filters Overlay */}
-                    <div style={{ position: 'absolute', top: 10, left: 10, right: 50, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {/* Search and Filters Overlay (Google Maps Style) */}
+                    <div style={{ position: 'absolute', top: 12, left: 12, right: 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                       <div className="mobile-search-container">
-                        <Search size={16} className="mobile-search-icon" />
+                        <Search size={18} className="mobile-search-icon" />
                         <input 
                           type="text" 
                           placeholder="Où devez-vous aller ?" 
@@ -713,6 +743,15 @@ export default function MobileSimulator({
                           onChange={e => setSearchQuery(e.target.value)}
                           className="mobile-search-input"
                         />
+                        {activeEmployee?.avatar && (
+                          <div 
+                            onClick={() => setMobileTab('settings')}
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', marginLeft: '0.5rem' }}
+                            title="Mon Profil"
+                          >
+                            <img src={activeEmployee.avatar} alt="avatar" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #1a73e8', objectFit: 'cover' }} />
+                          </div>
+                        )}
                       </div>
 
                       {/* Dropdown de recherche (Résultats) */}
@@ -753,125 +792,162 @@ export default function MobileSimulator({
                         </div>
                       )}
 
-                      <div className="mobile-filter-container">
-                        <input 
-                          type="checkbox" 
-                          id="filterToday"
-                          checked={filterToday}
-                          onChange={e => setFilterToday(e.target.checked)}
-                          className="mobile-filter-checkbox"
-                        />
-                        <label htmlFor="filterToday" className="mobile-filter-label">
-                          Aujourd'hui
-                        </label>
+                      {/* Horizontal filter chips row */}
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <button 
+                          className={`mobile-filter-pill ${filterToday ? 'active' : ''}`}
+                          onClick={() => setFilterToday(t => !t)}
+                        >
+                          📅 Aujourd'hui
+                        </button>
+                        <div className="mobile-status-pill">
+                          <span style={{ 
+                            width: 8, height: 8, borderRadius: '50%', 
+                            backgroundColor: isOffline ? '#ef4444' : '#10b981', 
+                            display: 'inline-block',
+                            boxShadow: isOffline ? '0 0 6px #ef4444' : '0 0 6px #10b981'
+                          }} />
+                          <span style={{ color: isOffline ? '#ef4444' : '#10b981' }}>
+                            {isOffline ? 'Hors-ligne' : 'En ligne'}
+                          </span>
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Floating circular map controls (Google Maps style) */}
+                    <div style={{ position: 'absolute', top: 130, right: 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                      <button 
+                        onClick={handleCenterMap}
+                        className="mobile-floating-btn"
+                        title="Centrer GPS"
+                      >
+                        🎯
+                      </button>
+                      {currentUser?.role === 'admin' && setLayoutMode && (
+                        <button 
+                          onClick={() => setLayoutMode('admin')}
+                          className="mobile-floating-btn"
+                          title="Retour au portail d'administration"
+                        >
+                          <Monitor size={18} />
+                        </button>
+                      )}
+                      <button 
+                        onClick={currentUser?.role === 'employee' && portalLogout ? portalLogout : handleLogout}
+                        className="mobile-floating-btn"
+                        style={{ color: '#ef4444' }}
+                        title="Se déconnecter"
+                      >
+                        <LogOut size={18} />
+                      </button>
                     </div>
 
                     {/* Bottom sheet for operation detail */}
                     {selectedOp && (
                       <div className={`mobile-bottom-sheet ${selectedOp ? 'open' : ''}`}>
                         <div className="sheet-drag-handle" onClick={() => setSelectedOp(null)}></div>
-                        <div className="sheet-header">
-                          <div className="sheet-client-name">
-                            {clients.find(c => c.id === selectedOp.clientId)?.name || "Client"}
+                        <div className="sheet-scrollable-content" style={{ overflowY: 'auto', flex: 1, marginBottom: '0.75rem', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                          <div className="sheet-header" style={{ marginBottom: 0 }}>
+                            <div className="sheet-client-name">
+                              {clients.find(c => c.id === selectedOp.clientId)?.name || "Client"}
+                            </div>
+                            <span className={`badge badge-${selectedOp.status}`}>
+                              {selectedOp.status}
+                            </span>
                           </div>
-                          <span className={`badge badge-${selectedOp.status}`}>
-                            {selectedOp.status}
-                          </span>
-                        </div>
-                        <div className="sheet-address">
-                          <MapPin size={12} />
-                          {clients.find(c => c.id === selectedOp.clientId)?.address || ""}
-                        </div>
-
-                        {/* Infos client additionnelles pour le technicien terrain */}
-                        {(() => {
-                          const client = clients.find(c => c.id === selectedOp.clientId);
-                          if (!client) return null;
-                          return (
-                            <div style={{
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '0.4rem',
-                              background: '#f8fafc',
-                              padding: '0.75rem',
-                              borderRadius: '10px',
-                              marginBottom: '0.875rem',
-                              border: '1px solid #e2e8f0',
-                              fontSize: '0.8rem'
-                            }}>
-                              {client.contactName && (
-                                <div style={{ color: '#334155' }}>
-                                  👤 Contact : <strong>{client.contactName}</strong>
-                                </div>
-                              )}
-                              {client.phone && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                  📞 Tél :{' '}
-                                  <a 
-                                    href={`tel:${client.phone}`}
-                                    style={{
-                                      color: '#3b5edb',
-                                      textDecoration: 'none',
-                                      fontWeight: 'bold',
-                                      backgroundColor: '#e0e7ff',
-                                      padding: '0.1rem 0.5rem',
-                                      borderRadius: '6px',
-                                      display: 'inline-flex',
-                                      alignItems: 'center',
-                                      gap: '0.2rem'
-                                    }}
-                                  >
-                                    {client.phone}
-                                  </a>
-                                </div>
-                              )}
-                              {client.notes && (
-                                <div style={{ 
-                                  marginTop: '0.25rem',
-                                  paddingTop: '0.4rem',
-                                  borderTop: '1px dashed #cbd5e1',
-                                  color: '#475569',
-                                  fontSize: '0.75rem',
-                                  fontStyle: 'italic',
-                                  lineHeight: 1.3
-                                }}>
-                                  💡 <strong>Guidage :</strong> {client.notes}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })()}
-                        <div className="sheet-job-desc">
-                          {selectedOp.description}
-                        </div>
-
-                        {routeInfo && (
-                          <div className="sheet-route-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', marginBottom: '1rem', border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', backgroundColor: 'var(--bg-app)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                              <div className="sheet-route-info-item">
-                                <Compass size={14} style={{ color: 'var(--primary)' }} />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Distance : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.distance} km</strong></span>
-                              </div>
-                              <div className="sheet-route-info-item">
-                                <Clock size={14} style={{ color: 'var(--primary)' }} />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Temps restant : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.duration} min</strong></span>
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '0.625rem' }}>
-                              <div className="sheet-route-info-item">
-                                <span style={{ marginRight: '6px', fontSize: '1rem' }}>🏁</span>
-                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Arrivée estimée : <strong style={{ color: '#10b981', fontSize: '0.875rem' }}>{getArrivalTime(routeInfo.duration)}</strong></span>
-                              </div>
-                              <div className="sheet-route-info-item">
-                                <span style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
-                                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
-                                  Trafic fluide
-                                </span>
-                              </div>
-                            </div>
+                          <div className="sheet-address" style={{ marginBottom: 0 }}>
+                            <MapPin size={12} />
+                            {clients.find(c => c.id === selectedOp.clientId)?.address || ""}
                           </div>
-                        )}
+
+                          {/* Infos client additionnelles pour le technicien terrain */}
+                          {(() => {
+                            const client = clients.find(c => c.id === selectedOp.clientId);
+                            if (!client) return null;
+                            return (
+                              <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '0.4rem',
+                                background: 'var(--bg-app)',
+                                padding: '0.75rem',
+                                borderRadius: '10px',
+                                border: '1px solid var(--border-color)',
+                                fontSize: '0.8rem'
+                              }}>
+                                {client.contactName && (
+                                  <div style={{ color: 'var(--text-main)' }}>
+                                    👤 Contact : <strong>{client.contactName}</strong>
+                                  </div>
+                                )}
+                                {client.phone && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                    📞 Tél :{' '}
+                                    <a 
+                                      href={`tel:${client.phone}`}
+                                      style={{
+                                        color: '#3b5edb',
+                                        textDecoration: 'none',
+                                        fontWeight: 'bold',
+                                        backgroundColor: '#e0e7ff',
+                                        padding: '0.1rem 0.5rem',
+                                        borderRadius: '6px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.2rem'
+                                      }}
+                                    >
+                                      {client.phone}
+                                    </a>
+                                  </div>
+                                )}
+                                {client.notes && (
+                                  <div style={{ 
+                                    marginTop: '0.25rem',
+                                    paddingTop: '0.4rem',
+                                    borderTop: '1px dashed var(--border-color)',
+                                    color: 'var(--text-muted)',
+                                    fontSize: '0.75rem',
+                                    fontStyle: 'italic',
+                                    lineHeight: 1.3
+                                  }}>
+                                    💡 <strong>Guidage :</strong> {client.notes}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })()}
+                          <div className="sheet-job-desc" style={{ marginBottom: 0 }}>
+                            {selectedOp.description}
+                          </div>
+
+                          {routeInfo && (
+                            <div className="sheet-route-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', backgroundColor: 'var(--bg-app)', marginBottom: 0 }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                <div className="sheet-route-info-item">
+                                  <Compass size={14} style={{ color: 'var(--primary)' }} />
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Distance : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.distance} km</strong></span>
+                                </div>
+                                <div className="sheet-route-info-item">
+                                  <Clock size={14} style={{ color: 'var(--primary)' }} />
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Temps restant : <strong style={{ color: 'var(--text-main)' }}>{routeInfo.duration} min</strong></span>
+                                </div>
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '0.625rem' }}>
+                                <div className="sheet-route-info-item">
+                                  <span style={{ marginRight: '6px', fontSize: '1rem' }}>🏁</span>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Arrivée estimée : <strong style={{ color: '#10b981', fontSize: '0.875rem' }}>{getArrivalTime(routeInfo.duration)}</strong></span>
+                                </div>
+                                <div className="sheet-route-info-item">
+                                  <span style={{ fontSize: '0.75rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.35rem', fontWeight: 600 }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', display: 'inline-block', boxShadow: '0 0 8px #10b981' }}></span>
+                                    Trafic fluide
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
 
                         <div className="sheet-actions">
                           {selectedOp.status === 'planifiée' && (
@@ -1220,6 +1296,111 @@ export default function MobileSimulator({
                           )}
                         </button>
                       </div>
+
+                      {/* Simulation control panel (Mobile Screen only) */}
+                      {isMobileScreen && currentUser?.role === 'admin' && (
+                        <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
+                            <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                              🤖 Contrôle Simulation
+                            </span>
+                            <span style={{ fontSize: '0.7rem', color: isOffline ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
+                              {isOffline ? 'OFFLINE' : 'ONLINE'}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <button 
+                              className="btn btn-secondary" 
+                              style={{ flex: 1, padding: '0.5rem', fontSize: '0.75rem', backgroundColor: isOffline ? '#fee2e2' : '' }}
+                              onClick={() => {
+                                setIsOffline(!isOffline);
+                                addNotification({
+                                  title: isOffline ? "Connexion rétablie" : "Connexion perdue",
+                                  body: isOffline ? "Vous êtes à nouveau connecté au réseau." : "Mode dégradé activé. Accès limité aux données locales en cache."
+                                });
+                              }}
+                            >
+                              {isOffline ? "Activer Réseau" : "Simuler Hors-ligne"}
+                            </button>
+
+                            {selectedOp && selectedOp.status === 'en cours' && (
+                              <button 
+                                className="btn btn-primary" 
+                                style={{ flex: 1.2, padding: '0.5rem', fontSize: '0.75rem', backgroundColor: isSimulatingMovement ? 'var(--danger)' : 'var(--primary)' }}
+                                onClick={() => {
+                                  const client = clients.find(c => c.id === selectedOp.clientId);
+                                  if (client) startMovementSimulation(client.gps);
+                                }}
+                              >
+                                {isSimulatingMovement ? "Arrêter" : "Simuler trajet"}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Quick location teleporter for testing */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Relocaliser :</span>
+                            <select 
+                              className="form-select" 
+                              style={{ padding: '0.25rem', fontSize: '0.75rem', width: '100%' }}
+                              value=""
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (!val) return;
+                                
+                                if (val === 'CUSTOM') {
+                                  const addressInput = prompt("Entrez un nom de lieu ou de quartier à Abidjan\nExemple : Riviera 3, Yopougon Maroc, Plateau");
+                                  if (!addressInput) return;
+                                  
+                                  // Geocoding query to OpenStreetMap Nominatim
+                                  const query = `${addressInput}, Abidjan, Côte d'Ivoire`;
+                                  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                      if (data && data.length > 0) {
+                                        const lat = parseFloat(data[0].lat);
+                                        const lng = parseFloat(data[0].lon);
+                                        
+                                        updateEmployeeGps(activeEmployee.id, { lat, lng });
+                                        setRoutePolyline(null);
+                                        setRouteInfo(null);
+                                        addNotification({
+                                          title: "Relocalisation réussie",
+                                          body: `Positionné à : ${data[0].display_name.split(',')[0]} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`
+                                        });
+                                      } else {
+                                        alert("Lieu introuvable à Abidjan. Essayez d'être plus précis (ex: Cocody Mermoz).");
+                                      }
+                                    })
+                                    .catch(err => {
+                                      console.error("Geocoding error", err);
+                                      alert("Erreur lors de la recherche de l'adresse.");
+                                    });
+                                  return;
+                                }
+
+                                const coords = val.split(',').map(Number);
+                                updateEmployeeGps(activeEmployee.id, { lat: coords[0], lng: coords[1] });
+                                setRoutePolyline(null);
+                                setRouteInfo(null);
+                                addNotification({
+                                  title: "Position GPS mise à jour",
+                                  body: `Nouvelles coordonnées : Lat ${coords[0]}, Lng ${coords[1]}`
+                                });
+                              }}
+                            >
+                              <option value="" disabled>Choisir position...</option>
+                              <option value="5.3245,-4.0205">Plateau (Position Initiale)</option>
+                              <option value="5.3571,-3.9897">Cocody (St-Jean)</option>
+                              <option value="5.3955,-3.9710">Angré (CNPS)</option>
+                              <option value="5.3050,-3.9785">Marcory (Zone 4)</option>
+                              <option value="5.3450,-4.0750">Yopougon (Siporex)</option>
+                              <option value="CUSTOM">📍 Position personnalisée...</option>
+                            </select>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1255,7 +1436,7 @@ export default function MobileSimulator({
       </div>
 
       {/* SIMULATOR CONTROL PANEL (OUTSIDE PHONE FRAME) */}
-      {activeEmployeeId && (
+      {!isMobileScreen && activeEmployeeId && (
         <div className="sim-controls-card">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-muted)' }}>

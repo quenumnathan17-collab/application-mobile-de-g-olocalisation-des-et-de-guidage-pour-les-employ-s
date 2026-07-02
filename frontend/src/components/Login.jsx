@@ -90,14 +90,16 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
         <TextField fullWidth label="Mot de passe"
           type={showPwd ? 'text' : 'password'} variant="outlined" margin="normal"
           value={password} onChange={e => setPassword(e.target.value)} required
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
-                </IconButton>
-              </InputAdornment>
-            )
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
+                    {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
           }}
           sx={{ mt: 2, ...fieldSx }} />
 
@@ -316,28 +318,32 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
           type={showPwd ? 'text' : 'password'} variant="outlined"
           value={form.password} onChange={set('password')} required
           helperText="Au moins 6 caractères"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
-                </IconButton>
-              </InputAdornment>
-            )
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
+                    {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
           }}
           sx={fieldSx} />
 
         <TextField fullWidth label="Confirmer le mot de passe *" margin="dense"
           type={showConfirm ? 'text' : 'password'} variant="outlined"
           value={form.confirmPassword} onChange={set('confirmPassword')} required
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={() => setShowConfirm(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
-                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                </IconButton>
-              </InputAdornment>
-            )
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowConfirm(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
+                    {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
           }}
           sx={fieldSx} />
 

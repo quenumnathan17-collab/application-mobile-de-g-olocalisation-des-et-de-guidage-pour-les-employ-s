@@ -14,6 +14,19 @@ export default function App() {
   const [operations, setOperations] = useState([]);
   const [activeEmployeeId, setActiveEmployeeId] = useState(null);
   
+  // Mobile screen detection
+  const [isMobileScreen, setIsMobileScreen] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth <= 768 : false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobileScreen(window.innerWidth <= 768);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Theme State
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('ya_theme');
@@ -305,13 +318,19 @@ export default function App() {
     return <Login onLoginSuccess={setCurrentUser} apiUrl={API_URL} />;
   }
 
-  // Force layout based on role
-  const effectiveLayoutMode = currentUser.role === 'employee' ? 'mobile' : layoutMode;
+  // Force layout based on role or screen size
+  const effectiveLayoutMode = currentUser.role === 'employee' 
+    ? 'mobile' 
+    : (isMobileScreen && layoutMode === 'split' ? 'admin' : layoutMode);
+
+  // Hide global header on mobile screen if we are in mobile simulator view
+  const showHeader = !isMobileScreen || effectiveLayoutMode !== 'mobile';
 
   return (
     <div className="app-container">
       {/* 1. Global Header */}
-      <header className="app-header">
+      {showHeader && (
+        <header className="app-header">
         <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <BrandLogo width={36} showText={false} color="#4f46e5" />
           <span>YA CONSULTING <span>Portail Interventions</span></span>
@@ -359,6 +378,7 @@ export default function App() {
           </button>
         </div>
       </header>
+      )}
 
       {/* 2. Main split screens layout */}
       <main className={`main-content layout-${effectiveLayoutMode}`}>
@@ -405,6 +425,10 @@ export default function App() {
             layoutMode={effectiveLayoutMode}
             currentUser={currentUser}
             theme={theme}
+            isMobileScreen={isMobileScreen}
+            portalLogout={handleLogout}
+            toggleTheme={toggleTheme}
+            setLayoutMode={setLayoutMode}
           />
         </div>
       </main>
