@@ -140,7 +140,7 @@ export default function App() {
         localStorage.setItem('offline_operations', JSON.stringify(opsData));
       } catch (err) {
         console.error("Erreur réseau, passage en mode hors ligne (dégradé) :", err);
-        setSnackbarMessage("⚠️ Mode hors ligne actif. Données en cache affichées.");
+        setSnackbarMessage("Mode hors ligne actif. Données en cache affichées.");
         
         const cachedClients = localStorage.getItem('offline_clients');
         const cachedEmps = localStorage.getItem('offline_employees');
@@ -370,7 +370,7 @@ export default function App() {
 
         <div className="header-actions">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-            <span style={{ fontSize: '1.2rem' }}>👋</span> Bonjour {currentUser.name}
+            Bonjour, {currentUser.name}
           </div>
           <button className="icon-btn" onClick={toggleTheme} title="Changer le thème">
             {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -406,7 +406,7 @@ export default function App() {
           {/* Simulated Toast Notification in phone */}
           {activeNotification && activeEmployeeId && (
             <div className="notif-toast" style={{ position: 'absolute', top: '70px', right: '40px', width: '300px', zIndex: 1000 }}>
-              <div style={{ fontSize: '18px' }}>🔔</div>
+              <div style={{ fontSize: '18px' }}>●</div>
               <div className="notif-content">
                 <div className="notif-title">{activeNotification.title}</div>
                 <div className="notif-body">{activeNotification.body}</div>

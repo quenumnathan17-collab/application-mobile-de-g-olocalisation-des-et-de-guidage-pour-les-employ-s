@@ -74,7 +74,7 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
   return (
     <>
       <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5 }}>
-        Bienvenue 👋
+        Bienvenue
       </Typography>
       <Typography variant="body2" sx={{ color: '#5e7290', mb: 2.5 }}>
         Connectez-vous à votre espace de travail
@@ -240,7 +240,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
   return (
     <>
       <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5 }}>
-        Créer un compte 🚀
+        Créer un compte
       </Typography>
       <Typography variant="body2" sx={{ color: '#5e7290', mb: 2 }}>
         Rejoignez l'équipe YA Consulting
@@ -272,7 +272,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
               <img src={avatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
               <Box sx={{ textAlign: 'center', px: 1 }}>
-                <Typography sx={{ fontSize: '2rem' }}>📷</Typography>
+                <Typography sx={{ fontSize: '1.5rem', color: '#94a3b8' }}>+</Typography>
                 <Typography variant="caption" sx={{ color: '#5e7290', fontWeight: 600, lineHeight: 1.2 }}>
                   Votre photo
                 </Typography>
@@ -422,7 +422,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
           </Typography>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center' }}>
-            {['🗺️ Cartographie temps réel', '📍 Guidage GPS', '👥 Gestion des équipes', '🔒 Sécurisé RGPD'].map((f, i) => (
+            {['Cartographie temps réel', 'Guidage GPS', 'Gestion des équipes', 'Sécurisé RGPD'].map((f, i) => (
               <Box key={i} sx={{
                 px: 2, py: 0.8, borderRadius: '999px',
                 background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
@@ -480,7 +480,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
               Votre assistant pour coordonner nos experts en cybersécurité, réseaux et sécurité électronique et simplifier leurs interventions sur le terrain.
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, justifyContent: 'center', mt: 1.8 }}>
-              {['🗺️ Cartographie', '📍 Guidage GPS', '👥 Équipes', '🔒 RGPD'].map((f, i) => (
+              {['Cartographie', 'Guidage GPS', 'Équipes', 'RGPD'].map((f, i) => (
                 <Box key={i} sx={{
                   px: 1.5, py: 0.4, borderRadius: '999px',
                   background: 'rgba(59, 94, 219, 0.08)',
@@ -507,8 +507,8 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
               '& .Mui-selected': { color: '#fff !important' },
             }}
           >
-            <Tab label="🔑 Connexion"   id="tab-login"    aria-controls="panel-login" />
-            <Tab label="✨ Inscription" id="tab-register" aria-controls="panel-register" />
+            <Tab label="Connexion"    id="tab-login"    aria-controls="panel-login" />
+            <Tab label="Inscription" id="tab-register" aria-controls="panel-register" />
           </Tabs>
 
           {/* Tab panels */}

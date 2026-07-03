@@ -162,7 +162,7 @@ export default function MobileSimulator({
       if (profileAvatar) setProfileAvatar(data.avatar || profileAvatar);
 
       setProfileSuccess('Profil mis à jour avec succès !');
-      addNotification({ title: '✅ Profil mis à jour', body: 'Vos informations ont été enregistrées.' });
+      addNotification({ title: ' Profil mis à jour', body: 'Vos informations ont été enregistrées.' });
     } catch (err) {
       setProfileError(err.message);
     } finally {
@@ -187,7 +187,7 @@ export default function MobileSimulator({
       if (!res.ok) throw new Error(data.error || 'Erreur.');
       setPwdSuccess('Mot de passe modifié avec succès !');
       setPwdForm({ current: '', next: '', confirm: '' });
-      addNotification({ title: '🔐 Mot de passe modifié', body: 'Votre nouveau mot de passe est actif.' });
+      addNotification({ title: ' Mot de passe modifié', body: 'Votre nouveau mot de passe est actif.' });
     } catch (err) {
       setPwdError(err.message);
     } finally {
@@ -538,7 +538,7 @@ export default function MobileSimulator({
       if (!client) return;
 
       const pinColor = op.status === 'en cours' ? '#0f9d58' : '#1a73e8';
-      const markerEmoji = client.type === 'entreprise' ? '🏢' : '👤';
+      const markerEmoji = client.type === 'entreprise' ? '' : '';
       const markerHtml = `
         <div style="position: relative; width: 34px; height: 42px; display: flex; align-items: center; justify-content: center;">
           <svg width="34" height="42" viewBox="0 0 34 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0px 3px 4px rgba(0, 0, 0, 0.25));">
@@ -608,7 +608,7 @@ export default function MobileSimulator({
           <div className="phone-status-bar">
             <span>{currentTime.toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' })}</span>
             <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-              <span>100% 🔋</span>
+              <span>100% </span>
             </div>
           </div>
           <div className="phone-screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', backgroundColor: '#f8fafc' }}>
@@ -648,8 +648,8 @@ export default function MobileSimulator({
         <div className="phone-status-bar">
           <span>{new Date().toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' })}</span>
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
-            {isOffline ? <WifiOff size={12} style={{ color: '#ef4444' }} /> : '📶'}
-            <span>100% 🔋</span>
+            {isOffline ? <WifiOff size={12} style={{ color: '#ef4444' }} /> : ''}
+            <span>100% </span>
           </div>
         </div>
 
@@ -910,7 +910,7 @@ export default function MobileSimulator({
                           className={`mobile-filter-pill ${filterToday ? 'active' : ''}`}
                           onClick={() => setFilterToday(t => !t)}
                         >
-                          📅 Aujourd'hui
+                           Aujourd'hui
                         </button>
                         <div className="mobile-status-pill">
                           <span style={{ 
@@ -987,12 +987,12 @@ export default function MobileSimulator({
                               }}>
                                 {client.contactName && (
                                   <div style={{ color: 'var(--text-main)' }}>
-                                    👤 Contact : <strong>{client.contactName}</strong>
+                                     Contact : <strong>{client.contactName}</strong>
                                   </div>
                                 )}
                                 {client.phone && (
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                    📞 Tél :{' '}
+                                     Tél :{' '}
                                     <a 
                                       href={`tel:${client.phone}`}
                                       style={{
@@ -1021,7 +1021,7 @@ export default function MobileSimulator({
                                     fontStyle: 'italic',
                                     lineHeight: 1.3
                                   }}>
-                                    💡 <strong>Guidage :</strong> {client.notes}
+                                     <strong>Guidage :</strong> {client.notes}
                                   </div>
                                 )}
                               </div>
@@ -1045,7 +1045,7 @@ export default function MobileSimulator({
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '0.625rem' }}>
                                 <div className="sheet-route-info-item">
-                                  <span style={{ marginRight: '6px', fontSize: '1rem' }}>🏁</span>
+                                  <span style={{ marginRight: '6px', fontSize: '1rem' }}></span>
                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Arrivée estimée : <strong style={{ color: '#10b981', fontSize: '0.875rem' }}>{getArrivalTime(routeInfo.duration)}</strong></span>
                                 </div>
                                 <div className="sheet-route-info-item">
@@ -1170,7 +1170,7 @@ export default function MobileSimulator({
                     })}
                     {activeJobs.length === 0 && (
                       <div style={{ textAlign: 'center', color: '#64748b', padding: '3rem 1rem' }}>
-                        🎉 Félicitations ! Toutes vos missions sont terminées pour aujourd'hui.
+                         Félicitations ! Toutes vos missions sont terminées pour aujourd'hui.
                       </div>
                     )}
                   </div>
@@ -1211,7 +1211,7 @@ export default function MobileSimulator({
                       <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>{activeEmployee.email}</div>
                       {profileAvatar && (
                         <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <button onClick={() => setProfileAvatar(null)} style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '20px', cursor: 'pointer' }}>✕ Annuler</button>
+                          <button onClick={() => setProfileAvatar(null)} style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '20px', cursor: 'pointer' }}> Annuler</button>
                         </div>
                       )}
                     </div>
@@ -1370,7 +1370,7 @@ export default function MobileSimulator({
                         <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                              🤖 Contrôle Simulation
+                               Contrôle Simulation
                             </span>
                             <span style={{ fontSize: '0.7rem', color: isOffline ? '#ef4444' : '#10b981', fontWeight: 'bold' }}>
                               {isOffline ? 'OFFLINE' : 'ONLINE'}
@@ -1475,7 +1475,7 @@ export default function MobileSimulator({
                               <option value="5.3955,-3.9710">Angré (CNPS)</option>
                               <option value="5.3050,-3.9785">Marcory (Zone 4)</option>
                               <option value="5.3450,-4.0750">Yopougon (Siporex)</option>
-                              <option value="CUSTOM">📍 Position personnalisée...</option>
+                              <option value="CUSTOM"> Position personnalisée...</option>
                             </select>
                           </div>
                         </div>
@@ -1640,7 +1640,7 @@ export default function MobileSimulator({
               <option value="5.3955,-3.9710">Angré (CNPS)</option>
               <option value="5.3050,-3.9785">Marcory (Zone 4)</option>
               <option value="5.3450,-4.0750">Yopougon (Siporex)</option>
-              <option value="CUSTOM">📍 Position personnalisée...</option>
+              <option value="CUSTOM"> Position personnalisée...</option>
             </select>
           </div>
         </div>
@@ -1652,7 +1652,7 @@ export default function MobileSimulator({
         <div className="modal-overlay" style={{ zIndex: 3000 }}>
           <div className="modal-content" style={{ maxWidth: '340px', padding: '1.75rem', borderRadius: '20px' }}>
             <h3 style={{ fontSize: '1.125rem', marginBottom: '1.25rem', textAlign: 'center', fontWeight: 700 }}>
-              🧭 Ouvrir l'itinéraire avec :
+               Ouvrir l'itinéraire avec :
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -1676,7 +1676,7 @@ export default function MobileSimulator({
                   setShowGpsChooser(false);
                 }}
               >
-                📍 Google Maps
+                 Google Maps
               </button>
 
               {/* Waze — address query for named place */}
@@ -1697,7 +1697,7 @@ export default function MobileSimulator({
                   setShowGpsChooser(false);
                 }}
               >
-                🚙 Waze
+                 Waze
               </button>
 
               {/* OpenStreetMap — excellente couverture Afrique de l'Ouest, gratuit */}
@@ -1719,7 +1719,7 @@ export default function MobileSimulator({
                   setShowGpsChooser(false);
                 }}
               >
-                🌍 OpenStreetMap
+                 OpenStreetMap
               </button>
             </div>
 

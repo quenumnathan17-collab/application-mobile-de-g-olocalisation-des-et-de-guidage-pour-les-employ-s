@@ -458,7 +458,7 @@ export default function AdminDashboard({
 
       setGeocodingAlert({
         type: location.strategy > 0 ? 'warning' : 'success',
-        text: `✅ Géocodage réussi${strategyMsg} — Lat ${savedClient.gps.lat.toFixed(4)}, Lng ${savedClient.gps.lng.toFixed(4)}`
+        text: ` Géocodage réussi${strategyMsg} — Lat ${savedClient.gps.lat.toFixed(4)}, Lng ${savedClient.gps.lng.toFixed(4)}`
       });
 
       setTimeout(() => {
@@ -520,7 +520,7 @@ export default function AdminDashboard({
         lng: location.lng
       });
 
-      setGeocodingAlert({ type: 'success', text: `✅ Mise à jour et géocodage réussis !` });
+      setGeocodingAlert({ type: 'success', text: ` Mise à jour et géocodage réussis !` });
 
       setTimeout(() => {
         setShowEditClient(false);
@@ -631,7 +631,7 @@ export default function AdminDashboard({
           box-shadow: 3px 3px 8px rgba(0,0,0,0.25);
         ">
           <span style="transform: rotate(45deg); font-size: 18px;">
-            ${client.type === 'entreprise' ? '🏢' : '👤'}
+            ${client.type === 'entreprise' ? '' : ''}
           </span>
         </div>
       `;
@@ -648,7 +648,7 @@ export default function AdminDashboard({
       const popupContent = `
         <div style="font-family: sans-serif; min-width: 200px;">
           <h4 style="margin: 0 0 4px 0; color: #1e293b;">${client.name}</h4>
-          <p style="margin: 0 0 8px 0; font-size: 11px; color: #64748b;">📍 ${client.address}</p>
+          <p style="margin: 0 0 8px 0; font-size: 11px; color: #64748b;"> ${client.address}</p>
           <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 8px 0;" />
           <div style="margin-top: 6px;">
             <strong style="font-size: 11px; color: #475569;">Opération :</strong>
@@ -697,7 +697,7 @@ export default function AdminDashboard({
             justify-content: center;
             font-size: 18px;
           ">
-            🛠️
+            
           </div>
           <div style="
             position: absolute;
@@ -728,13 +728,13 @@ export default function AdminDashboard({
       });
 
       const opDetails = activeOps.length > 0 
-        ? `<p style="margin: 4px 0 0 0; color: #059669; font-weight: 600;">⚡ En route/En cours chez : ${clients.find(c => c.id === activeOps[0].clientId)?.name || 'Inconnu'}</p>`
+        ? `<p style="margin: 4px 0 0 0; color: #059669; font-weight: 600;"> En route/En cours chez : ${clients.find(c => c.id === activeOps[0].clientId)?.name || 'Inconnu'}</p>`
         : '<p style="margin: 4px 0 0 0; color: #64748b; font-style: italic;">Disponible (pas de mission en cours)</p>';
 
       const popupContent = `
         <div style="font-family: sans-serif; min-width: 180px;">
           <h4 style="margin: 0 0 4px 0;">${emp.name}</h4>
-          <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748b;">📞 ${emp.phone}</p>
+          <p style="margin: 0 0 4px 0; font-size: 11px; color: #64748b;"> ${emp.phone}</p>
           <div style="font-size: 12px; margin-top: 6px; border-top: 1px solid #f1f5f9; padding-top: 6px;">
             <strong>Statut actuel :</strong>
             ${opDetails}
@@ -820,12 +820,12 @@ export default function AdminDashboard({
               }
             }}
           >
-            <Tab icon={<MapIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="🗺️ Vue Terrain" sx={{ fontWeight: 600, minHeight: 64 }} />
-            <Tab icon={<PeopleIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="👥 Carnet d'adresses" sx={{ fontWeight: 600, minHeight: 64 }} />
-            <Tab icon={<WorkIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="📅 Planning & Missions" sx={{ fontWeight: 600, minHeight: 64 }} />
-            <Tab icon={<BarChartIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="📊 Activité & Rapports" sx={{ fontWeight: 600, minHeight: 64 }} />
-            <Tab icon={<PersonIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="👷 Votre Équipe" sx={{ fontWeight: 600, minHeight: 64 }} />
-            <Tab icon={<WarningIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="⚠️ Signalements" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<MapIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Vue Terrain" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<PeopleIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Carnet d'adresses" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<WorkIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Planning & Missions" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<BarChartIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Activité & Rapports" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<PersonIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Votre Équipe" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<WarningIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Signalements" sx={{ fontWeight: 600, minHeight: 64 }} />
           </Tabs>
         </Box>
 
@@ -846,7 +846,7 @@ export default function AdminDashboard({
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                   <Chip 
                     icon={<BusinessIcon fontSize="small" />} 
-                    label="🏢 Client Entreprise" 
+                    label=" Client Entreprise" 
                     size="small" 
                     variant={legendFilter === 'entreprise' ? 'filled' : 'outlined'} 
                     color={legendFilter === 'entreprise' ? 'primary' : 'default'}
@@ -855,7 +855,7 @@ export default function AdminDashboard({
                   />
                   <Chip 
                     icon={<PersonIcon fontSize="small" />} 
-                    label="👤 Client Particulier" 
+                    label=" Client Particulier" 
                     size="small" 
                     variant={legendFilter === 'particulier' ? 'filled' : 'outlined'} 
                     color={legendFilter === 'particulier' ? 'secondary' : 'default'}
@@ -864,7 +864,7 @@ export default function AdminDashboard({
                   />
                   <Chip 
                     icon={<BuildIcon fontSize="small" />} 
-                    label="🛠️ Technicien actif" 
+                    label=" Technicien actif" 
                     size="small" 
                     variant={legendFilter === 'technicien' ? 'filled' : 'outlined'} 
                     color={legendFilter === 'technicien' ? 'success' : 'default'}
@@ -1184,7 +1184,7 @@ export default function AdminDashboard({
                                 onClick={() => client && centerMapOnGps(client.gps.lat, client.gps.lng)}
                                 title="Voir sur la carte"
                               >
-                                📍 {client ? client.address : ""}
+                                 {client ? client.address : ""}
                               </Typography>
                             </TableCell>
                             <TableCell sx={{ maxWidth: '280px', wordBreak: 'break-word' }}>{op.description}</TableCell>
@@ -1245,10 +1245,10 @@ export default function AdminDashboard({
                                   }}
                                   sx={{ fontSize: '0.8125rem', borderRadius: 2, fontWeight: 600 }}
                                 >
-                                  <MenuItem value="planifiée">📋 Planifiée</MenuItem>
-                                  <MenuItem value="en cours">⚡ En cours</MenuItem>
-                                  <MenuItem value="terminée">✅ Terminée</MenuItem>
-                                  <MenuItem value="annulée">❌ Annulée</MenuItem>
+                                  <MenuItem value="planifiée"> Planifiée</MenuItem>
+                                  <MenuItem value="en cours"> En cours</MenuItem>
+                                  <MenuItem value="terminée"> Terminée</MenuItem>
+                                  <MenuItem value="annulée"> Annulée</MenuItem>
                                 </Select>
                               </FormControl>
                             </TableCell>
@@ -1737,8 +1737,8 @@ export default function AdminDashboard({
                   value={newClientType}
                   onChange={(e) => setNewClientType(e.target.value)}
                 >
-                  <MenuItem value="entreprise">🏢 Entreprise</MenuItem>
-                  <MenuItem value="particulier">👤 Particulier</MenuItem>
+                  <MenuItem value="entreprise"> Entreprise</MenuItem>
+                  <MenuItem value="particulier"> Particulier</MenuItem>
                 </Select>
               </FormControl>
 
@@ -1752,7 +1752,7 @@ export default function AdminDashboard({
                   value={newClientAddress}
                   onChange={(e) => handleAddressAutocomplete(e.target.value)}
                   onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  helperText={showManualGps ? '🧭 Mode GPS manuel activé — coordonnées utilisées à la place.' : '💡 Tapez pour voir des suggestions d\'adresses à Abidjan.'}
+                  helperText={showManualGps ? ' Mode GPS manuel activé — coordonnées utilisées à la place.' : ' Tapez pour voir des suggestions d\'adresses à Abidjan.'}
                 />
                 {showSuggestions && addressSuggestions.length > 0 && (
                   <Box sx={{
@@ -1773,7 +1773,7 @@ export default function AdminDashboard({
                           setShowSuggestions(false);
                         }}
                       >
-                        📍 {s.display_name}
+                         {s.display_name}
                       </Box>
                     ))}
                   </Box>
@@ -1798,7 +1798,7 @@ export default function AdminDashboard({
                     {...params}
                     label="Commune / Quartier d'Abidjan"
                     placeholder="Sélectionnez ou tapez un quartier…"
-                    helperText="💡 Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
+                    helperText=" Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
                   />
                 )}
               />
@@ -1813,7 +1813,7 @@ export default function AdminDashboard({
                   onClick={() => setShowManualGps(v => !v)}
                   sx={{ mb: showManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
                 >
-                  {showManualGps ? '🧭 GPS Manuel activé' : '📐 Saisir les coordonnées GPS manuellement'}
+                  {showManualGps ? ' GPS Manuel activé' : ' Saisir les coordonnées GPS manuellement'}
                 </Button>
                 {showManualGps && (
                   <Grid container spacing={2}>
@@ -1905,7 +1905,7 @@ export default function AdminDashboard({
                 variant="contained"
                 disabled={geocodingAlert?.type === 'success' || geocodingLoading}
               >
-                {geocodingLoading ? '🔍 Géocodage…' : '🗺️ Enregistrer & Géocoder'}
+                {geocodingLoading ? ' Géocodage…' : ' Enregistrer & Géocoder'}
               </Button>
             </DialogActions>
           </form>
@@ -1933,8 +1933,8 @@ export default function AdminDashboard({
                     value={editClientData.type}
                     onChange={(e) => setEditClientData({ ...editClientData, type: e.target.value })}
                   >
-                    <MenuItem value="entreprise">🏢 Entreprise</MenuItem>
-                    <MenuItem value="particulier">👤 Particulier</MenuItem>
+                    <MenuItem value="entreprise"> Entreprise</MenuItem>
+                    <MenuItem value="particulier"> Particulier</MenuItem>
                   </Select>
                 </FormControl>
 
@@ -1944,7 +1944,7 @@ export default function AdminDashboard({
                   fullWidth
                   value={editClientData.address}
                   onChange={(e) => setEditClientData({ ...editClientData, address: e.target.value })}
-                  helperText="💡 Modifiez pour re-géocoder. Ajoutez un quartier pour améliorer la précision."
+                  helperText=" Modifiez pour re-géocoder. Ajoutez un quartier pour améliorer la précision."
                 />
 
                 {/* Commune edit — saisie libre ou sélection */}
@@ -1965,7 +1965,7 @@ export default function AdminDashboard({
                       {...params}
                       label="Commune / Quartier"
                       placeholder="Sélectionnez ou tapez un quartier…"
-                      helperText="💡 Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
+                      helperText=" Choisissez dans la liste ou saisissez librement (ex : Angré, Riviera, 2 Plateaux…)"
                     />
                   )}
                 />
@@ -1980,7 +1980,7 @@ export default function AdminDashboard({
                     onClick={() => setEditClientData({ ...editClientData, useManualGps: !editClientData.useManualGps })}
                     sx={{ mb: editClientData?.useManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
                   >
-                    {editClientData?.useManualGps ? '🧭 GPS Manuel activé' : '📐 Saisir coordonnées GPS manuellement'}
+                    {editClientData?.useManualGps ? ' GPS Manuel activé' : ' Saisir coordonnées GPS manuellement'}
                   </Button>
                   {editClientData?.useManualGps && (
                     <Grid container spacing={2}>
@@ -2068,7 +2068,7 @@ export default function AdminDashboard({
                   variant="contained"
                   disabled={geocodingAlert?.type === 'success' || geocodingLoading}
                 >
-                  {geocodingLoading ? '🔍 Géocodage…' : '🗺️ Mettre à jour & Géocoder'}
+                  {geocodingLoading ? ' Géocodage…' : ' Mettre à jour & Géocoder'}
                 </Button>
               </DialogActions>
             </form>
@@ -2095,7 +2095,7 @@ export default function AdminDashboard({
                   }}
                 >
                   <MenuItem value="ADD_NEW_CLIENT" sx={{ fontWeight: 'bold', color: 'primary.main', borderBottom: '1px solid', borderColor: 'divider' }}>
-                    ➕ Ajouter un nouveau client...
+                     Ajouter un nouveau client...
                   </MenuItem>
                   {clients.filter(c => !c.archived).map(c => (
                     <MenuItem key={c.id} value={c.id}>
@@ -2438,7 +2438,7 @@ export default function AdminDashboard({
                         return (
                           <Box key={op.id} sx={{ p: 1.5, mb: 0.5, bgcolor: 'background.default', borderRadius: 2, border: '1px solid', borderColor: 'divider', cursor: 'pointer', '&:hover': { borderColor: 'warning.main' } }} onClick={() => { setSelectedEmpDetail(null); setActiveTab(2); }}>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>{op.description}</Typography>
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>📍 {opClient?.name || 'Inconnu'} — {opClient?.address || ''}</Typography>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}> {opClient?.name || 'Inconnu'} — {opClient?.address || ''}</Typography>
                           </Box>
                         );
                       })}
