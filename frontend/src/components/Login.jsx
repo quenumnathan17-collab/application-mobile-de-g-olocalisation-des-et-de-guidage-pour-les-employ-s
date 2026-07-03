@@ -73,12 +73,7 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
 
   return (
     <>
-      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.5px' }}>
-        Connexion
-      </Typography>
-      <Typography variant="body2" sx={{ color: '#5e7290', mb: 2.5, fontWeight: 500 }}>
-        Accédez à votre espace terrain
-      </Typography>
+      <Box sx={{ mt: 1.5 }} />
 
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
 
@@ -239,12 +234,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
 
   return (
     <>
-      <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.5px' }}>
-        Inscription
-      </Typography>
-      <Typography variant="body2" sx={{ color: '#5e7290', mb: 2, fontWeight: 500 }}>
-        Créez vos accès collaborateur
-      </Typography>
+      <Box sx={{ mt: 1.5 }} />
 
       {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
       {success && <Alert severity="success" sx={{ mb: 2, borderRadius: '12px' }}>{success}</Alert>}
