@@ -74,10 +74,10 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
   return (
     <>
       <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.5px' }}>
-        Accès Espace Collaborateur
+        Connexion
       </Typography>
       <Typography variant="body2" sx={{ color: '#5e7290', mb: 2.5, fontWeight: 500 }}>
-        Veuillez vous authentifier pour accéder à la cartographie
+        Accédez à votre espace terrain
       </Typography>
 
       {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
@@ -240,10 +240,10 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
   return (
     <>
       <Typography variant="h5" fontWeight={800} sx={{ color: '#1a2744', mb: 0.5, fontFamily: 'Outfit, sans-serif', letterSpacing: '-0.5px' }}>
-        Nouvelle Inscription
+        Inscription
       </Typography>
       <Typography variant="body2" sx={{ color: '#5e7290', mb: 2, fontWeight: 500 }}>
-        Enregistrez vos accès collaborateur YA Consulting
+        Créez vos accès collaborateur
       </Typography>
 
       {error   && <Alert severity="error"   sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
