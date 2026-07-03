@@ -963,7 +963,7 @@ export default function MobileSimulator({
                             <>
                               <button 
                                 className="btn btn-secondary" 
-                                style={{ flex: 1, padding: '0.5rem', backgroundColor: '#e2e8f0' }}
+                                style={{ flex: 1, padding: '0.5rem', backgroundColor: '#e2e8f0', color: '#0f172a' }}
                                 onClick={() => handleStatusChange(selectedOp.id, 'planifiée')}
                               >
                                 En pause
