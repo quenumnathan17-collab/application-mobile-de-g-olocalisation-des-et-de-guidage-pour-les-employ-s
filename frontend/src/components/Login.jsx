@@ -449,7 +449,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
         display: 'flex', flexDirection: 'column',
         justifyContent: 'center', alignItems: 'center',
         p: { xs: 3, sm: 5 },
-        background: 'linear-gradient(180deg,#f8fafc 0%,#eef3fa 100%)',
+        background: { xs: 'linear-gradient(160deg,#1a2244 0%,#2d3a6d 25%,#3b5edb 50%,#4a9de8 75%,#69b4f5 100%)', md: 'linear-gradient(180deg,#f8fafc 0%,#eef3fa 100%)' },
         position: 'relative',
         overflowY: 'auto',
       }}>
@@ -520,7 +520,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
           </Box>
         </Paper>
 
-        <Typography variant="caption" sx={{ color: '#8899b5', fontWeight: 500, mb: 3 }}>
+        <Typography variant="caption" sx={{ color: { xs: 'rgba(255,255,255,0.5)', md: '#8899b5' }, fontWeight: 500, mb: 3 }}>
           © 2025 YA Consulting — Tous droits réservés
         </Typography>
       </Box>
