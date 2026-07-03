@@ -1311,30 +1311,41 @@ export default function MobileSimulator({
                                   const addressInput = prompt("Entrez un nom de lieu ou de quartier à Abidjan\nExemple : Riviera 3, Yopougon Maroc, Plateau");
                                   if (!addressInput) return;
                                   
-                                  // Geocoding query to OpenStreetMap Nominatim
-                                  const query = `${addressInput}, Abidjan, Côte d'Ivoire`;
-                                  fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`)
-                                    .then(res => res.json())
-                                    .then(data => {
-                                      if (data && data.length > 0) {
-                                        const lat = parseFloat(data[0].lat);
-                                        const lng = parseFloat(data[0].lon);
-                                        
-                                        updateEmployeeGps(activeEmployee.id, { lat, lng });
-                                        setRoutePolyline(null);
-                                        setRouteInfo(null);
-                                        addNotification({
-                                          title: "Relocalisation réussie",
-                                          body: `Positionné à : ${data[0].display_name.split(',')[0]} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`
-                                        });
-                                      } else {
-                                        alert("Lieu introuvable à Abidjan. Essayez d'être plus précis (ex: Cocody Mermoz).");
+                                  (async () => {
+                                    const queries = [
+                                      addressInput + ", Abidjan, Côte d'Ivoire",
+                                      addressInput + ", Côte d'Ivoire",
+                                      addressInput
+                                    ];
+                                    let foundData = null;
+                                    
+                                    for (const q of queries) {
+                                      try {
+                                        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&countrycodes=ci&format=json&limit=1`);
+                                        const data = await res.json();
+                                        if (data && data.length > 0) {
+                                          foundData = data[0];
+                                          break;
+                                        }
+                                      } catch (e) {
+                                        console.error("Relocation geocode attempt failed:", q, e);
                                       }
-                                    })
-                                    .catch(err => {
-                                      console.error("Geocoding error", err);
-                                      alert("Erreur lors de la recherche de l'adresse.");
-                                    });
+                                    }
+
+                                    if (foundData) {
+                                      const lat = parseFloat(foundData.lat);
+                                      const lng = parseFloat(foundData.lon);
+                                      updateEmployeeGps(activeEmployee.id, { lat, lng });
+                                      setRoutePolyline(null);
+                                      setRouteInfo(null);
+                                      addNotification({
+                                        title: "Relocalisation réussie",
+                                        body: `Positionné à : ${foundData.display_name.split(',')[0]} (Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`
+                                      });
+                                    } else {
+                                      alert("Lieu introuvable à Abidjan. Essayez d'être plus précis (ex: Cocody Mermoz) ou d'utiliser un point d'intérêt connu.");
+                                    }
+                                  })();
                                   return;
                                 }
 
