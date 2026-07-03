@@ -43,10 +43,10 @@
   --shadow-premium: 0 20px 40px -8px rgb(59 94 219 / 0.14), 0 8px 16px -6px rgb(59 94 219 / 0.08);
   --shadow-glow: 0 0 24px rgb(59 94 219 / 0.18);
   
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-  --radius-xl: 32px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
   
   --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --transition-smooth: 0.3s cubic-bezier(0.16, 1, 0.3, 1);
@@ -107,7 +107,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: var(--radius-sm);
+  border-radius: 0px;
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
@@ -163,7 +163,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-main);
@@ -204,7 +204,7 @@ h1, h2, h3, h4, h5, h6 {
 .layout-switch-group {
   display: flex;
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   overflow: hidden;
   background-color: var(--bg-card);
   padding: 3px;
@@ -215,7 +215,7 @@ h1, h2, h3, h4, h5, h6 {
 .layout-switch-btn {
   border: none;
   background: none;
-  border-radius: 8px;
+  border-radius: 0px;
   padding: 0.5rem 1rem;
   cursor: pointer;
   display: flex;
@@ -336,7 +336,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 0;
   height: 3px;
   background-color: var(--primary);
-  border-radius: 3px 3px 0 0;
+  border-radius: 0px;
 }
 
 .admin-body {
@@ -349,7 +349,7 @@ h1, h2, h3, h4, h5, h6 {
 .card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
   margin-bottom: 1.5rem;
@@ -381,7 +381,7 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.625rem 1.25rem;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   font-family: var(--font-primary);
   font-weight: 600;
   font-size: 0.875rem;
@@ -455,7 +455,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.25rem;
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: 0px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: capitalize;
@@ -509,7 +509,7 @@ h1, h2, h3, h4, h5, h6 {
 .form-input, .form-select, .form-textarea {
   width: 100%;
   padding: 0.625rem 0.875rem;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-main);
@@ -534,7 +534,7 @@ h1, h2, h3, h4, h5, h6 {
 .table-container {
   width: 100%;
   overflow-x: auto;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   border: 1px solid var(--border-color);
 }
 
@@ -601,7 +601,7 @@ h1, h2, h3, h4, h5, h6 {
 .map-placeholder {
   height: 500px;
   background-color: #cbd5e1;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -613,7 +613,7 @@ h1, h2, h3, h4, h5, h6 {
 .map-container {
   height: 500px;
   width: 100%;
-  border-radius: var(--radius-lg);
+  border-radius: 0px;
   overflow: hidden;
   border: 1px solid var(--border-color);
   z-index: 1;
@@ -791,7 +791,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 1.5rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: 0px;
   padding: 1.25rem;
   box-shadow: var(--shadow-md);
   display: flex;
@@ -837,7 +837,7 @@ h1, h2, h3, h4, h5, h6 {
 .mobile-login::-webkit-scrollbar-thumb,
 .phone-screen *::-webkit-scrollbar-thumb {
   background: rgba(99, 102, 241, 0.35);
-  border-radius: 999px;
+  border-radius: 0px;
 }
 .mobile-app-body *::-webkit-scrollbar-thumb:hover,
 .mobile-login::-webkit-scrollbar-thumb:hover,
@@ -920,7 +920,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 30%;
   height: 3px;
   background-color: var(--primary);
-  border-radius: 0 0 4px 4px;
+  border-radius: 0px;
   opacity: 0;
   transform: translateY(-3px);
   transition: all var(--transition-fast);
@@ -988,7 +988,7 @@ h1, h2, h3, h4, h5, h6 {
   background-color: rgba(255, 255, 255, 0.85);
   backdrop-filter: blur(8px);
   border: 1px solid rgba(59, 94, 219, 0.15);
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   cursor: pointer;
   transition: all var(--transition-smooth);
   text-align: left;
@@ -1023,8 +1023,8 @@ h1, h2, h3, h4, h5, h6 {
   right: 0;
   background-color: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(16px);
-  border-top-left-radius: 24px;
-  border-top-right-radius: 24px;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.15);
   z-index: 2000;
   padding: 1.25rem;
@@ -1048,7 +1048,7 @@ h1, h2, h3, h4, h5, h6 {
   width: 36px;
   height: 4px;
   background: linear-gradient(90deg, #cbd5e1, #94a3b8, #cbd5e1);
-  border-radius: 2px;
+  border-radius: 0px;
   margin: 0 auto 0.75rem;
   cursor: pointer;
   transition: width var(--transition-fast);
@@ -1226,7 +1226,7 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   background-color: #cbd5e1;
   transition: .3s;
-  border-radius: 24px;
+  border-radius: 0px;
 }
 .mobile-switch-slider:before {
   position: absolute;
@@ -1271,7 +1271,7 @@ h1, h2, h3, h4, h5, h6 {
   right: 10px;
   background-color: #1e1b4b;
   color: white;
-  border-radius: 12px;
+  border-radius: 0px;
   padding: 0.75rem 1rem;
   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
   display: flex;
@@ -1332,7 +1332,7 @@ h1, h2, h3, h4, h5, h6 {
 .modal-content {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  border-radius: 0px;
   max-width: 500px;
   width: 90%;
   padding: 2rem;
@@ -1377,7 +1377,7 @@ h1, h2, h3, h4, h5, h6 {
 .mobile-job-card {
   background-color: white;
   border: 1px solid #e2e8f0;
-  border-radius: var(--radius-md);
+  border-radius: 0px;
   padding: 1rem;
   display: flex;
   flex-direction: column;
@@ -1503,7 +1503,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   background-color: var(--bg-card);
-  border-radius: 28px;
+  border-radius: 0px;
   padding: 0.6rem 1rem;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   border: 1px solid var(--border-color);
@@ -1565,7 +1565,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 0.85rem;
-  border-radius: 20px;
+  border-radius: 0px;
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   color: var(--text-muted);
@@ -1595,7 +1595,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 0.85rem;
-  border-radius: 20px;
+  border-radius: 0px;
   border: 1px solid var(--border-color);
   background-color: var(--bg-card);
   font-size: 0.75rem;
@@ -1635,7 +1635,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 1rem;
   background-color: var(--bg-app);
   padding: 0.5rem 0.75rem;
-  border-radius: 8px;
+  border-radius: 0px;
   font-size: 0.75rem;
   margin-bottom: 0.75rem;
   border: 1px dashed var(--border-color);
@@ -1817,7 +1817,7 @@ h1, h2, h3, h4, h5, h6 {
     aspect-ratio: 9 / 18.5;
     min-width: 340px;
     border-width: 8px;
-    border-radius: 38px;
+    border-radius: 0px;
   }
 
   .sim-controls-card {
@@ -1942,7 +1942,7 @@ h1, h2, h3, h4, h5, h6 {
 
   .map-container {
     height: 280px;
-    border-radius: var(--radius-md);
+    border-radius: 0px;
   }
 
   /* Mobile simulator — scale down phone frame */
@@ -1965,7 +1965,7 @@ h1, h2, h3, h4, h5, h6 {
     max-width: 100% !important;
     max-height: 100% !important;
     border: none !important;
-    border-radius: 0 !important;
+    border-radius: 0px;
     box-shadow: none !important;
     transform: none !important;
     margin: 0 !important;
@@ -1978,7 +1978,7 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .phone-screen {
-    border-radius: 0 !important;
+    border-radius: 0px;
   }
 
   .sim-controls-card {
@@ -1988,7 +1988,7 @@ h1, h2, h3, h4, h5, h6 {
   .modal-content {
     width: 95%;
     padding: 1.25rem;
-    border-radius: var(--radius-md);
+    border-radius: 0px;
   }
 
   .modal-title {
@@ -2003,8 +2003,8 @@ h1, h2, h3, h4, h5, h6 {
   /* Bottom sheet */
   .mobile-bottom-sheet {
     padding: 1rem;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
     max-height: 60%;
     overflow-y: auto;
   }
@@ -2085,7 +2085,7 @@ h1, h2, h3, h4, h5, h6 {
   .card {
     padding: 0.875rem;
     margin-bottom: 0.875rem;
-    border-radius: var(--radius-sm);
+    border-radius: 0px;
   }
 
   .card-title {
@@ -2095,12 +2095,12 @@ h1, h2, h3, h4, h5, h6 {
   .btn {
     padding: 0.4rem 0.75rem;
     font-size: 0.75rem;
-    border-radius: var(--radius-sm);
+    border-radius: 0px;
   }
 
   /* Tables scroll horizontally on tiny screens */
   .table-container {
-    border-radius: var(--radius-sm);
+    border-radius: 0px;
   }
 
   .data-table th,
@@ -2122,7 +2122,7 @@ h1, h2, h3, h4, h5, h6 {
     width: min(300px, calc(100vw - 1.5rem));
     height: min(580px, calc(100vh - 130px));
     border-width: 6px;
-    border-radius: 30px;
+    border-radius: 0px;
   }
 
   .phone-status-bar {
@@ -2134,8 +2134,8 @@ h1, h2, h3, h4, h5, h6 {
   .phone-notch {
     width: 80px;
     height: 18px;
-    border-bottom-left-radius: 12px;
-    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
   }
 
   .mobile-app-header {
@@ -2154,7 +2154,7 @@ h1, h2, h3, h4, h5, h6 {
   .sim-controls-card {
     width: min(300px, calc(100vw - 1.5rem));
     padding: 0.75rem;
-    border-radius: var(--radius-md);
+    border-radius: 0px;
     gap: 0.375rem;
   }
 
@@ -2276,7 +2276,7 @@ h1, h2, h3, h4, h5, h6 {
     width: 100% !important;
     height: 100% !important;
     border: none !important;
-    border-radius: 0 !important;
+    border-radius: 0px;
   }
 
   .sim-controls-card {
@@ -2308,7 +2308,7 @@ h1, h2, h3, h4, h5, h6 {
     height: calc(100vh - 80px);
     flex-shrink: 0;
     border-width: 5px;
-    border-radius: 24px;
+    border-radius: 0px;
   }
 
   .sim-controls-card {

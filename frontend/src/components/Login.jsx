@@ -10,7 +10,7 @@ import BrandLogo from './BrandLogo';
 // ── Shared field styles ───────────────────────────────────────────────────────
 const fieldSx = {
   '& .MuiOutlinedInput-root': {
-    borderRadius: '14px',
+    borderRadius: '0px',
     bgcolor: 'rgba(255,255,255,0.6)',
     color: '#1a2744',
     transition: 'all 0.2s',
@@ -24,7 +24,7 @@ const fieldSx = {
 };
 
 const btnSx = {
-  mt: 3, mb: 2, py: 1.8, borderRadius: '14px',
+  mt: 3, mb: 2, py: 1.8, borderRadius: '0px',
   fontWeight: 700, fontSize: '1.05rem', textTransform: 'none',
   background: 'linear-gradient(135deg,#2d3a6d 0%,#3b5edb 50%,#69b4f5 100%)',
   boxShadow: '0 10px 25px -8px rgba(59,94,219,0.5)',
@@ -453,7 +453,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
 
         <Paper elevation={0} sx={{
           p: { xs: 3.5, sm: 4.5 },
-          maxWidth: 440, width: '100%', borderRadius: '28px',
+          maxWidth: 440, width: '100%', borderRadius: 0,
           background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(24px)',
           border: '1px solid rgba(255,255,255,1)',
           boxShadow: '0 32px 64px -16px rgba(45,58,109,0.1),0 0 0 1px rgba(255,255,255,0.5) inset',
@@ -472,7 +472,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, justifyContent: 'center', mt: 1.8 }}>
               {['Cartographie', 'Guidage GPS', 'Équipes', 'RGPD'].map((f, i) => (
                 <Box key={i} sx={{
-                  px: 1.5, py: 0.4, borderRadius: '999px',
+                  px: 1.5, py: 0.4, borderRadius: 0,
                   background: 'rgba(59, 94, 219, 0.08)',
                   border: '1px solid rgba(59, 94, 219, 0.15)',
                   color: '#2d3a6d', fontSize: '0.72rem', fontWeight: 600
@@ -487,11 +487,11 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
             onChange={(_, v) => setTab(v)}
             variant="fullWidth"
             sx={{
-              mb: 3, borderRadius: '12px', bgcolor: '#f0f4fb',
-              '& .MuiTabs-indicator': { borderRadius: '8px', height: '100%', bgcolor: '#3b5edb', zIndex: 0 },
+              mb: 3, borderRadius: '0px', bgcolor: '#f0f4fb',
+              '& .MuiTabs-indicator': { borderRadius: '0px', height: '100%', bgcolor: '#3b5edb', zIndex: 0 },
               '& .MuiTab-root': {
                 zIndex: 1, fontWeight: 700, textTransform: 'none', fontSize: '0.9rem',
-                color: '#5e7290', borderRadius: '10px', transition: 'color 0.2s',
+                color: '#5e7290', borderRadius: '0px', transition: 'color 0.2s',
                 minHeight: '42px',
               },
               '& .Mui-selected': { color: '#fff !important' },

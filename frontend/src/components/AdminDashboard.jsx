@@ -329,7 +329,7 @@ export default function AdminDashboard({
         h6: { fontFamily: "'Outfit', sans-serif", fontWeight: 600 },
       },
       shape: {
-        borderRadius: 12,
+        borderRadius: 0,
       },
       components: {
         MuiButton: {
@@ -337,7 +337,7 @@ export default function AdminDashboard({
             root: {
               textTransform: 'none',
               fontWeight: 600,
-              borderRadius: '10px',
+              borderRadius: '0px',
               padding: '8px 16px',
             },
           },
