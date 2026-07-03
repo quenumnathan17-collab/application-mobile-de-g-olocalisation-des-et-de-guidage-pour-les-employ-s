@@ -817,30 +817,14 @@ export default function MobileSimulator({
                     </div>
 
                     {/* Floating circular map controls (Google Maps style) */}
-                    <div style={{ position: 'absolute', top: 130, right: 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
+                    <div style={{ position: 'absolute', top: 130, right: 12, zIndex: 1000 }}>
                       <button 
                         onClick={handleCenterMap}
                         className="mobile-floating-btn"
-                        title="Centrer GPS"
+                        style={{ color: 'var(--primary)', width: '38px', height: '38px' }}
+                        title="Centrer sur ma position"
                       >
-                        🎯
-                      </button>
-                      {currentUser?.role === 'admin' && setLayoutMode && (
-                        <button 
-                          onClick={() => setLayoutMode('admin')}
-                          className="mobile-floating-btn"
-                          title="Retour au portail d'administration"
-                        >
-                          <Monitor size={18} />
-                        </button>
-                      )}
-                      <button 
-                        onClick={currentUser?.role === 'employee' && portalLogout ? portalLogout : handleLogout}
-                        className="mobile-floating-btn"
-                        style={{ color: '#ef4444' }}
-                        title="Se déconnecter"
-                      >
-                        <LogOut size={18} />
+                        <Navigation size={16} style={{ transform: 'rotate(45deg)', fill: 'currentColor' }} />
                       </button>
                     </div>
 
@@ -1375,6 +1359,33 @@ export default function MobileSimulator({
                           </div>
                         </div>
                       )}
+                      {/* Bouton de déconnexion et de retour admin dans le Profil */}
+                      <div style={{ padding: '0 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.5rem', width: '100%', boxSizing: 'border-box' }}>
+                        {currentUser?.role === 'admin' && setLayoutMode && (
+                          <button
+                            onClick={() => setLayoutMode('admin')}
+                            style={{
+                              width: '100%', padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-color)',
+                              background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                              transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
+                            }}
+                          >
+                            <Monitor size={15} /> Portail Administration
+                          </button>
+                        )}
+                        <button
+                          onClick={currentUser?.role === 'employee' && portalLogout ? portalLogout : handleLogout}
+                          style={{
+                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: '1px solid #fee2e2',
+                            background: '#fff5f5', color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                            transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(239,68,68,0.08)'
+                          }}
+                        >
+                          <LogOut size={15} /> Se déconnecter
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}
