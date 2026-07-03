@@ -470,12 +470,25 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
           zIndex: 1, position: 'relative',
           my: 4,
         }}>
-          {/* Mobile-only logo */}
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-            <BrandLogo width={80} showText={false} color="#69b4f5" />
-            <Typography variant="h5" fontWeight={800} sx={{ mt: 1.5, color: '#1a2744' }}>
+          {/* Mobile-only logo and presentation */}
+          <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', mb: 3, textAlign: 'center' }}>
+            <BrandLogo width={64} showText={false} color="#3b5edb" />
+            <Typography variant="h5" fontWeight={900} sx={{ mt: 1, color: '#2d3a6d', fontFamily: 'Outfit,sans-serif' }}>
               YA CONSULTING
             </Typography>
+            <Typography variant="body2" sx={{ color: '#5e7290', mt: 1.2, px: 1, fontSize: '0.82rem', lineHeight: 1.45 }}>
+              Votre assistant pour coordonner nos experts en cybersécurité, réseaux et sécurité électronique et simplifier leurs interventions sur le terrain.
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, justifyContent: 'center', mt: 1.8 }}>
+              {['🗺️ Cartographie', '📍 Guidage GPS', '👥 Équipes', '🔒 RGPD'].map((f, i) => (
+                <Box key={i} sx={{
+                  px: 1.5, py: 0.4, borderRadius: '999px',
+                  background: 'rgba(59, 94, 219, 0.08)',
+                  border: '1px solid rgba(59, 94, 219, 0.15)',
+                  color: '#2d3a6d', fontSize: '0.72rem', fontWeight: 600
+                }}>{f}</Box>
+              ))}
+            </Box>
           </Box>
 
           {/* Tabs */}
