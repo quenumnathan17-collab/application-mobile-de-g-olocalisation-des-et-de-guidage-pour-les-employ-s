@@ -6,7 +6,7 @@ import {
   WifiOff, Search, Compass, ChevronRight, 
   MapPin, CheckCircle2, Play, ExternalLink, RefreshCw,
   Settings, User, Camera, Lock, Phone, Mail, Save, Eye, EyeOff, CheckCheck, AlertCircle,
-  Monitor, Sun, Moon
+  Monitor, Sun, Moon, X
 } from 'lucide-react';
 
 export default function MobileSimulator({ 
@@ -51,6 +51,7 @@ export default function MobileSimulator({
   const [showConfirm, setShowConfirm]       = useState(false);
   const profileFileRef = useRef(null);
   const [selectedOp, setSelectedOp] = useState(null);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
   
@@ -845,16 +846,30 @@ export default function MobileSimulator({
 
                     {/* Bottom sheet for operation detail */}
                     {selectedOp && (
-                      <div className={`mobile-bottom-sheet ${selectedOp ? 'open' : ''}`}>
-                        <div className="sheet-drag-handle" onClick={() => setSelectedOp(null)}></div>
+                      <div className={`mobile-bottom-sheet ${selectedOp ? 'open' : ''} ${sheetExpanded ? 'expanded' : ''}`}>
+                        <div 
+                          className="sheet-drag-handle" 
+                          onClick={() => setSheetExpanded(!sheetExpanded)}
+                          style={{ cursor: 'pointer' }}
+                          title={sheetExpanded ? "Réduire" : "Dérouler"}
+                        ></div>
                         <div className="sheet-scrollable-content" style={{ overflowY: 'auto', flex: 1, marginBottom: '0.75rem', paddingRight: '4px', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                           <div className="sheet-header" style={{ marginBottom: 0 }}>
                             <div className="sheet-client-name">
                               {clients.find(c => c.id === selectedOp.clientId)?.name || "Client"}
                             </div>
-                            <span className={`badge badge-${selectedOp.status}`}>
-                              {selectedOp.status}
-                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span className={`badge badge-${selectedOp.status}`}>
+                                {selectedOp.status}
+                              </span>
+                              <button 
+                                onClick={() => { setSelectedOp(null); setSheetExpanded(false); }} 
+                                style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                                title="Fermer"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
                           </div>
                           <div className="sheet-address" style={{ marginBottom: 0 }}>
                             <MapPin size={12} />
