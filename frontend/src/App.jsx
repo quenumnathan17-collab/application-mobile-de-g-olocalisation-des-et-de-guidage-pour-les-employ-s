@@ -335,7 +335,7 @@ export default function App() {
         <header className="app-header">
         <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <BrandLogo width={36} showText={false} color="#4f46e5" />
-          <span>YA CONSULTING <span>Portail Interventions</span></span>
+          <span>YA Consulting <span>— Portail Terrain</span></span>
         </div>
 
         {/* Layout Switcher Buttons (Only visible for Admins) */}
