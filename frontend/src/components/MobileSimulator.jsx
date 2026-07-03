@@ -6,7 +6,7 @@ import {
   WifiOff, Search, Compass, ChevronRight, 
   MapPin, CheckCircle2, Play, ExternalLink, RefreshCw,
   Settings, User, Camera, Lock, Phone, Mail, Save, Eye, EyeOff, CheckCheck, AlertCircle,
-  Monitor, Sun, Moon, X
+  Monitor, Sun, Moon, X, Menu, History, AlertTriangle
 } from 'lucide-react';
 
 export default function MobileSimulator({ 
@@ -52,6 +52,11 @@ export default function MobileSimulator({
   const profileFileRef = useRef(null);
   const [selectedOp, setSelectedOp] = useState(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [liveLocationSharing, setLiveLocationSharing] = useState(true);
+  const [showReportIssueModal, setShowReportIssueModal] = useState(false);
+  const [reportText, setReportText] = useState('');
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [routePolyline, setRoutePolyline] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
   
@@ -648,6 +653,105 @@ export default function MobileSimulator({
           </div>
         </div>
 
+        {/* SIDE DRAWER MENU (Google Maps Style) */}
+        <div className={`mobile-drawer-overlay ${isDrawerOpen ? 'open' : ''}`} onClick={() => setIsDrawerOpen(false)}></div>
+        <div className={`mobile-drawer ${isDrawerOpen ? 'open' : ''}`}>
+          <div className="drawer-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <img src={activeEmployee?.avatar} alt="avatar" style={{ width: 44, height: 44, borderRadius: '50%', border: '2px solid white', objectFit: 'cover' }} />
+              <div className="drawer-user-info">
+                <div style={{ fontWeight: 800, fontSize: '0.95rem' }}>{activeEmployee?.name}</div>
+                <div style={{ fontSize: '0.72rem', opacity: 0.85 }}>{activeEmployee?.email}</div>
+              </div>
+            </div>
+            <button 
+              onClick={() => setIsDrawerOpen(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="drawer-menu-list">
+            {/* Live Location Sharing */}
+            <div className="drawer-menu-item" style={{ cursor: 'default', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Navigation size={18} style={{ color: liveLocationSharing ? '#10b981' : '#94a3b8' }} />
+                <div>
+                  <div style={{ fontWeight: 600 }}>Partage de position</div>
+                  <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{liveLocationSharing ? 'Actif' : 'Désactivé'}</div>
+                </div>
+              </div>
+              <label className="mobile-switch">
+                <input 
+                  type="checkbox" 
+                  checked={liveLocationSharing} 
+                  onChange={() => {
+                    setLiveLocationSharing(!liveLocationSharing);
+                    addNotification({
+                      title: !liveLocationSharing ? "Partage de position activé" : "Partage de position suspendu",
+                      body: !liveLocationSharing ? "Les administrateurs peuvent suivre votre position." : "Votre position GPS n'est plus partagée."
+                    });
+                  }}
+                />
+                <span className="mobile-switch-slider"></span>
+              </label>
+            </div>
+
+            {/* Trip History */}
+            <button 
+              className="drawer-menu-item"
+              onClick={() => {
+                setIsDrawerOpen(false);
+                setShowHistoryModal(true);
+              }}
+            >
+              <History size={18} style={{ color: '#3b5edb' }} />
+              <span>Historique des trajets</span>
+            </button>
+
+            {/* Report Address Issue */}
+            <button 
+              className="drawer-menu-item"
+              onClick={() => {
+                setIsDrawerOpen(false);
+                setShowReportIssueModal(true);
+              }}
+            >
+              <AlertTriangle size={18} style={{ color: '#f59e0b' }} />
+              <span>Signaler une erreur d'adresse</span>
+            </button>
+
+            {/* Change Profile Settings */}
+            <button 
+              className="drawer-menu-item"
+              onClick={() => {
+                setIsDrawerOpen(false);
+                setMobileTab('settings');
+              }}
+            >
+              <Settings size={18} style={{ color: '#64748b' }} />
+              <span>Paramètres du profil</span>
+            </button>
+
+            {/* Logout */}
+            <button 
+              className="drawer-menu-item danger"
+              onClick={() => {
+                setIsDrawerOpen(false);
+                if (currentUser?.role === 'employee' && portalLogout) {
+                  portalLogout();
+                } else {
+                  handleLogout();
+                }
+              }}
+            >
+              <LogOut size={18} />
+              <span>Se déconnecter</span>
+            </button>
+          </div>
+        </div>
+
         <div className="phone-screen">
           {isOffline && (
             <div className="offline-banner">
@@ -737,7 +841,13 @@ export default function MobileSimulator({
                     {/* Search and Filters Overlay (Google Maps Style) */}
                     <div style={{ position: 'absolute', top: 12, left: 12, right: 12, zIndex: 1000, display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
                       <div className="mobile-search-container">
-                        <Search size={18} className="mobile-search-icon" />
+                        <div 
+                          onClick={() => setIsDrawerOpen(true)}
+                          style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', marginRight: '0.6rem', color: 'var(--text-muted)' }}
+                          title="Menu principal"
+                        >
+                          <Menu size={20} />
+                        </div>
                         <input 
                           type="text" 
                           placeholder="Où devez-vous aller ?" 
@@ -1622,6 +1732,92 @@ export default function MobileSimulator({
                 Annuler
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* REPORT ADDRESS ISSUE MODAL */}
+      {showReportIssueModal && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }}>
+          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '20px' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <AlertTriangle size={20} color="#f59e0b" /> Signaler une erreur d'adresse
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem', textAlign: 'left' }}>
+              Vous rencontrez des difficultés à localiser un client sur la carte ? Décrivez le problème ci-dessous (ex: mauvaise rue, coordonnées GPS inexactes, mauvaise commune).
+            </p>
+            <textarea
+              placeholder="Exemple : L'adresse de SIB est en fait sur l'Avenue Chardy et non sur le Boulevard de la République..."
+              value={reportText}
+              onChange={(e) => setReportText(e.target.value)}
+              style={{ width: '100%', height: '100px', padding: '0.5rem', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginBottom: '1rem', fontFamily: 'inherit' }}
+            />
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button 
+                className="btn btn-secondary" 
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '10px' }}
+                onClick={() => { setShowReportIssueModal(false); setReportText(''); }}
+              >
+                Annuler
+              </button>
+              <button 
+                className="btn btn-primary" 
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '10px', backgroundColor: '#f59e0b', border: 'none' }}
+                onClick={() => {
+                  if (!reportText.trim()) return;
+                  alert("Merci ! Votre signalement a été envoyé aux administrateurs pour correction.");
+                  setShowReportIssueModal(false);
+                  setReportText('');
+                }}
+              >
+                Envoyer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TRIP HISTORY MODAL */}
+      {showHistoryModal && (
+        <div className="modal-overlay" style={{ zIndex: 3000 }}>
+          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '20px' }}>
+            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <History size={20} color="#3b5edb" /> Trajets de la journée
+            </h3>
+            
+            <div style={{ maxHeight: '250px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.25rem', paddingRight: '4px' }}>
+              {(() => {
+                const completedToday = operations.filter(
+                  op => op.employeeId === activeEmployee?.id && op.status === 'terminée'
+                );
+
+                if (completedToday.length === 0) {
+                  return <div style={{ fontSize: '0.85rem', color: '#64748b', textAlign: 'center', padding: '1.5rem 0' }}>Aucun trajet terminé aujourd'hui.</div>;
+                }
+
+                return completedToday.map(op => {
+                  const client = clients.find(c => c.id === op.clientId);
+                  return (
+                    <div key={op.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem', textAlign: 'left' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{client?.name || 'Client'}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.125rem' }}>{client?.address}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
+                        <span className="badge badge-terminée" style={{ fontSize: '0.65rem' }}>Terminé</span>
+                        <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Mission accomplie</span>
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+
+            <button 
+              className="btn btn-secondary" 
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '10px' }}
+              onClick={() => setShowHistoryModal(false)}
+            >
+              Fermer
+            </button>
           </div>
         </div>
       )}
