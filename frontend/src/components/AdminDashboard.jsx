@@ -781,12 +781,15 @@ export default function AdminDashboard({
     <ThemeProvider theme={muiTheme}>
       <Box sx={{ display: layoutMode === 'mobile' ? 'none' : 'flex', flexDirection: 'column', height: '100%', borderRight: '1px solid', borderColor: 'divider', bgcolor: 'background.default', overflow: 'hidden' }}>
         {/* Navigation Tabs */}
-        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper', px: 3 }}>
+        <Box sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
           <Tabs 
             value={activeTab} 
             onChange={(e, val) => setActiveTab(val)}
             textColor="primary"
             indicatorColor="primary"
+            variant="scrollable"
+            scrollButtons="auto"
+            allowScrollButtonsMobile
             aria-label="admin dashboard navigation"
             sx={{
               '& .MuiTabs-indicator': {
