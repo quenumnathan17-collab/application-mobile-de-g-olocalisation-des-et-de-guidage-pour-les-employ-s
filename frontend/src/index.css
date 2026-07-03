@@ -725,14 +725,14 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Phone Status Bar */
 .phone-status-bar {
-  height: 32px;
+  height: 38px;
   background-color: #0a0a1a;
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 1.5rem;
-  font-size: 0.75rem;
+  padding: 10px 3.2rem 0;
+  font-size: 0.72rem;
   font-weight: 600;
   z-index: 20;
 }
@@ -823,7 +823,9 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .mobile-app-nav {
-  height: 52px;
+  height: auto;
+  min-height: 56px;
+  padding-bottom: 12px;
   background-color: white;
   border-top: 1px solid #e2e8f0;
   display: grid;
@@ -853,10 +855,15 @@ h1, h2, h3, h4, h5, h6 {
   transition: color var(--transition-fast), transform var(--transition-fast);
   position: relative;
   padding: 0 0.25rem;
+  outline: none; /* Disable default focus outline */
 }
 
 .mobile-nav-item:hover {
   color: var(--primary);
+}
+
+.mobile-nav-item:focus {
+  outline: none; /* Disable focus outline on click */
 }
 
 .mobile-nav-item svg {
