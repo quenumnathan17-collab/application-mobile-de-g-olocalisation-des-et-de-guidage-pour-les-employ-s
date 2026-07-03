@@ -699,8 +699,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Smartphone Wrapper */
 .smartphone-frame {
-  width: 415px;
-  height: min(890px, calc(100vh - 120px));
+  height: min(890px, calc(100vh - 100px));
+  aspect-ratio: 9 / 18.5;
   background-color: #1a1a2e;
   border: 10px solid #0a0a1a;
   border-radius: 44px;
@@ -763,7 +763,8 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Simulator Controls */
 .sim-controls-card {
-  width: 415px;
+  width: 100%;
+  max-width: 415px;
   margin-top: 1.5rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -1626,14 +1627,16 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .smartphone-frame {
-    width: 385px;
-    height: min(820px, calc(100vh - 130px));
+    width: auto;
+    height: min(820px, calc(100vh - 110px));
+    aspect-ratio: 9 / 18.5;
     border-width: 8px;
     border-radius: 38px;
   }
 
   .sim-controls-card {
-    width: 385px;
+    width: 100%;
+    max-width: 385px;
     margin-top: 1rem;
     padding: 1rem;
   }
