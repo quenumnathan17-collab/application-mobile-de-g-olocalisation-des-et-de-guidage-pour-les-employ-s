@@ -697,6 +697,27 @@ h1, h2, h3, h4, h5, h6 {
   gap: 0.5rem;
 }
 
+.simulator-workspace-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 1024px) {
+  .simulator-workspace-layout {
+    flex-direction: column;
+    gap: 1.5rem;
+    overflow-y: auto;
+    width: 100%;
+  }
+}
+
 /* Smartphone Wrapper */
 .smartphone-frame {
   height: min(890px, calc(100vh - 100px));

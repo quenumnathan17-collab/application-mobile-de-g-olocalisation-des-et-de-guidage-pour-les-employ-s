@@ -635,9 +635,10 @@ export default function MobileSimulator({
         <Compass size={16} /> Simulateur Mobile Employé
       </div>
 
-      <div className="smartphone-frame">
-        {/* Notch & Status bar */}
-        <div className="phone-notch"></div>
+      <div className="simulator-workspace-layout">
+        <div className="smartphone-frame">
+          {/* Notch & Status bar */}
+          <div className="phone-notch"></div>
         <div className="phone-status-bar">
           <span>{new Date().toLocaleTimeString('fr-CI', { hour: '2-digit', minute: '2-digit' })}</span>
           <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center' }}>
@@ -1497,6 +1498,7 @@ export default function MobileSimulator({
           </div>
         </div>
       )}
+      </div>
 
       {/* EXTERNAL GPS APP CHOOSER MODAL */}
       {showGpsChooser && selectedOp && (
