@@ -1632,6 +1632,7 @@ export default function AdminDashboard({
                             variant="outlined"
                             onClick={() => toggleEmployeeStatus(emp)}
                             disabled={emp.role === 'admin' && employees.filter(e => e.role === 'admin' && e.status === 'active').length === 1}
+                            sx={{ minWidth: '100px' }}
                           >
                             {emp.status === 'active' ? 'Désactiver' : 'Activer'}
                           </Button>
