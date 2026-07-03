@@ -1640,6 +1640,9 @@ export default function AdminDashboard({
                   </TableBody>
                 </Table>
               </TableContainer>
+            </Box>
+          )}
+
           {/* TAB 5: ADDRESS REPORTS */}
           {activeTab === 5 && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
