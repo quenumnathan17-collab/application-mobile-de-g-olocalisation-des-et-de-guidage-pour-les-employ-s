@@ -701,6 +701,7 @@ h1, h2, h3, h4, h5, h6 {
 .smartphone-frame {
   height: min(890px, calc(100vh - 100px));
   aspect-ratio: 9 / 18.5;
+  min-width: 365px;
   background-color: #1a1a2e;
   border: 10px solid #0a0a1a;
   border-radius: 44px;
@@ -731,7 +732,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 3.2rem 0;
+  padding: 10px 2rem 0;
   font-size: 0.72rem;
   font-weight: 600;
   z-index: 20;
@@ -1637,6 +1638,7 @@ h1, h2, h3, h4, h5, h6 {
     width: auto;
     height: min(820px, calc(100vh - 110px));
     aspect-ratio: 9 / 18.5;
+    min-width: 340px;
     border-width: 8px;
     border-radius: 38px;
   }
