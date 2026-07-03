@@ -338,7 +338,18 @@ export default function AdminDashboard({
               textTransform: 'none',
               fontWeight: 600,
               borderRadius: '0px',
+            },
+            sizeSmall: {
+              padding: '4px 10px',
+              fontSize: '0.8125rem',
+            },
+            sizeMedium: {
               padding: '8px 16px',
+              fontSize: '0.875rem',
+            },
+            sizeLarge: {
+              padding: '12px 24px',
+              fontSize: '0.9375rem',
             },
           },
         },
