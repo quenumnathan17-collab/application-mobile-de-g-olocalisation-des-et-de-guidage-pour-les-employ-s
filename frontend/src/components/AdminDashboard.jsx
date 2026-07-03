@@ -91,6 +91,47 @@ export default function AdminDashboard({
   layoutMode
 }) {
   const [activeTab, setActiveTab] = useState(0); // 0: supervision, 1: clients, 2: operations, 3: rapports
+  const [addressReports, setAddressReports] = useState([]);
+
+  const fetchAddressReports = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/address-reports', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAddressReports(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch address reports:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 5) {
+      fetchAddressReports();
+    }
+  }, [activeTab]);
+
+  const handleDeleteReport = async (reportId) => {
+    if (!window.confirm("Voulez-vous marquer ce signalement comme résolu ? Il sera définitivement supprimé.")) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/address-reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setAddressReports(prev => prev.filter(r => r.id !== reportId));
+      } else {
+        alert("Impossible de supprimer le signalement.");
+      }
+    } catch (err) {
+      alert("Erreur lors de la suppression : " + err.message);
+    }
+  };
+
   const [searchQuery, setSearchQuery] = useState('');
   const [clientTypeFilter, setClientTypeFilter] = useState('all');
   
@@ -784,6 +825,7 @@ export default function AdminDashboard({
             <Tab icon={<WorkIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="📅 Planning & Missions" sx={{ fontWeight: 600, minHeight: 64 }} />
             <Tab icon={<BarChartIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="📊 Activité & Rapports" sx={{ fontWeight: 600, minHeight: 64 }} />
             <Tab icon={<PersonIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="👷 Votre Équipe" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<WarningIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="⚠️ Signalements" sx={{ fontWeight: 600, minHeight: 64 }} />
           </Tabs>
         </Box>
 
@@ -1595,6 +1637,73 @@ export default function AdminDashboard({
                         </TableCell>
                       </TableRow>
                     ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+          {/* TAB 5: ADDRESS REPORTS */}
+          {activeTab === 5 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box>
+                <Typography variant="h5" component="h2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                  Signalements d'anomalies d'adresses
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                  Retours d'informations des techniciens concernant les imprécisions cartographiques ou les erreurs de coordonnées.
+                </Typography>
+              </Box>
+
+              <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 3 }}>
+                <Table sx={{ minWidth: 650 }}>
+                  <TableHead sx={{ bgcolor: 'background.default' }}>
+                    <TableRow>
+                      <TableCell sx={{ fontWeight: 700, color: 'text.secondary', width: '20%' }}>Technicien</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'text.secondary', width: '15%' }}>Date du signalement</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'text.secondary', width: '50%' }}>Description de l'anomalie</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: 'text.secondary', width: '15%', textAlign: 'right' }}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {addressReports.map((rep) => {
+                      const emp = employees.find(e => e.id === rep.employeeId);
+                      return (
+                        <TableRow key={rep.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Avatar src={emp?.avatar} alt={rep.employeeName} sx={{ width: 32, height: 32 }} />
+                              <Typography fontWeight={600} variant="body2">{rep.employeeName}</Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+                            {new Date(rep.createdAt).toLocaleString('fr-CI', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                          </TableCell>
+                          <TableCell sx={{ fontSize: '0.875rem', fontWeight: 500, color: 'text.primary', wordBreak: 'break-word', py: 2 }}>
+                            {rep.message}
+                          </TableCell>
+                          <TableCell align="right">
+                            <Button
+                              variant="outlined"
+                              color="success"
+                              size="small"
+                              onClick={() => handleDeleteReport(rep.id)}
+                              sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 600 }}
+                            >
+                              Marquer comme résolu
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                    {addressReports.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'text.secondary' }}>
+                            <CheckCircleIcon sx={{ fontSize: 44, mb: 1.5, color: 'success.main', opacity: 0.8 }} />
+                            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'text.primary' }}>Aucun signalement en attente</Typography>
+                            <Typography variant="body2">Toutes les adresses sont géocodées correctement !</Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </TableContainer>

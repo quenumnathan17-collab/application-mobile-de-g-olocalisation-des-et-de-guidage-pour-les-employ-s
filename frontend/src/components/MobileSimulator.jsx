@@ -1763,11 +1763,29 @@ export default function MobileSimulator({
               <button 
                 className="btn btn-primary" 
                 style={{ flex: 1, padding: '0.5rem', borderRadius: '10px', backgroundColor: '#f59e0b', border: 'none' }}
-                onClick={() => {
+                onClick={async () => {
                   if (!reportText.trim()) return;
-                  alert("Merci ! Votre signalement a été envoyé aux administrateurs pour correction.");
-                  setShowReportIssueModal(false);
-                  setReportText('');
+                  try {
+                    const token = localStorage.getItem('token');
+                    const res = await fetch('/api/address-reports', {
+                      method: 'POST',
+                      headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ message: reportText })
+                    });
+                    if (!res.ok) {
+                      const data = await res.json();
+                      throw new Error(data.error || "Impossible d'envoyer le rapport.");
+                    }
+                    alert("Merci ! Votre signalement a été envoyé aux administrateurs pour correction.");
+                  } catch (err) {
+                    alert("Erreur lors de l'envoi : " + err.message);
+                  } finally {
+                    setShowReportIssueModal(false);
+                    setReportText('');
+                  }
                 }}
               >
                 Envoyer

@@ -101,6 +101,8 @@ export default function App() {
         setTimeout(() => setActiveNotification(null), 8000);
 
         fetchOperations();
+      } else if (data.type === 'ADDRESS_REPORT_CREATED') {
+        setSnackbarMessage(data.message);
       }
     };
 

@@ -594,6 +594,64 @@ app.put('/api/operations/:id/status', authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// --- 6. Address Reports ---
+app.get('/api/address-reports', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const reports = await prisma.addressReport.findMany({
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/address-reports', authenticateToken, async (req, res) => {
+  const { message } = req.body;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: "Le contenu du message est requis." });
+  }
+
+  try {
+    const newReport = await prisma.addressReport.create({
+      data: {
+        employeeId: req.user.id,
+        employeeName: req.user.name,
+        message: message.trim()
+      }
+    });
+
+    // Broadcast to SSE clients to notify admin in real-time
+    broadcastEvent({
+      type: 'ADDRESS_REPORT_CREATED',
+      report: newReport,
+      message: `Nouveau signalement d'adresse par ${req.user.name}`
+    });
+
+    res.status(201).json(newReport);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/address-reports/:id', authenticateToken, requireRole('admin'), async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.addressReport.delete({
+      where: { id }
+    });
+    
+    // Broadcast event
+    broadcastEvent({
+      type: 'ADDRESS_REPORT_DELETED',
+      reportId: id
+    });
+
+    res.json({ message: "Signalement supprimé." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Start Server
 app.listen(PORT, () => {
