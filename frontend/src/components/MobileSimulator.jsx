@@ -981,7 +981,7 @@ export default function MobileSimulator({
                                 gap: '0.4rem',
                                 background: 'var(--bg-app)',
                                 padding: '0.75rem',
-                                borderRadius: '10px',
+                                borderRadius: '0px',
                                 border: '1px solid var(--border-color)',
                                 fontSize: '0.8rem'
                               }}>
@@ -1001,7 +1001,7 @@ export default function MobileSimulator({
                                         fontWeight: 'bold',
                                         backgroundColor: '#e0e7ff',
                                         padding: '0.1rem 0.5rem',
-                                        borderRadius: '6px',
+                                        borderRadius: '0px',
                                         display: 'inline-flex',
                                         alignItems: 'center',
                                         gap: '0.2rem'
@@ -1032,7 +1032,7 @@ export default function MobileSimulator({
                           </div>
 
                           {routeInfo && (
-                            <div className="sheet-route-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', border: '1px dashed var(--border-color)', borderRadius: '12px', padding: '0.85rem', backgroundColor: 'var(--bg-app)', marginBottom: 0 }}>
+                            <div className="sheet-route-info" style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem', width: '100%', border: '1px dashed var(--border-color)', borderRadius: '0px', padding: '0.85rem', backgroundColor: 'var(--bg-app)', marginBottom: 0 }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
                                 <div className="sheet-route-info-item">
                                   <Compass size={14} style={{ color: 'var(--primary)' }} />
@@ -1211,7 +1211,7 @@ export default function MobileSimulator({
                       <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem' }}>{activeEmployee.email}</div>
                       {profileAvatar && (
                         <div style={{ marginTop: '0.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <button onClick={() => setProfileAvatar(null)} style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '20px', cursor: 'pointer' }}> Annuler</button>
+                          <button onClick={() => setProfileAvatar(null)} style={{ fontSize: '0.7rem', padding: '0.2rem 0.6rem', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'white', borderRadius: '0px', cursor: 'pointer' }}> Annuler</button>
                         </div>
                       )}
                     </div>
@@ -1219,18 +1219,18 @@ export default function MobileSimulator({
                     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '-1rem' }}>
 
                       {/* ── Personal info card ── */}
-                      <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
+                      <div style={{ background: 'white', borderRadius: '0px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', color: '#1a2744', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           <User size={14} color="#3b5edb" /> Informations personnelles
                         </div>
 
                         {profileError && (
-                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
+                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
                             <AlertCircle size={14} />{profileError}
                           </div>
                         )}
                         {profileSuccess && (
-                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
+                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '0px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
                             <CheckCheck size={14} />{profileSuccess}
                           </div>
                         )}
@@ -1244,7 +1244,7 @@ export default function MobileSimulator({
                             value={profileForm.name}
                             onChange={e => setProfileForm(f => ({ ...f, name: e.target.value }))}
                             placeholder={activeEmployee.name}
-                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '0px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                             onFocus={e => e.target.style.borderColor = '#3b5edb'}
                             onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                           />
@@ -1260,7 +1260,7 @@ export default function MobileSimulator({
                             value={profileForm.email}
                             onChange={e => setProfileForm(f => ({ ...f, email: e.target.value }))}
                             placeholder={activeEmployee.email}
-                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '0px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                             onFocus={e => e.target.style.borderColor = '#3b5edb'}
                             onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                           />
@@ -1276,7 +1276,7 @@ export default function MobileSimulator({
                             value={profileForm.phone}
                             onChange={e => setProfileForm(f => ({ ...f, phone: e.target.value }))}
                             placeholder={activeEmployee.phone}
-                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                            style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '0px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                             onFocus={e => e.target.style.borderColor = '#3b5edb'}
                             onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                           />
@@ -1286,7 +1286,7 @@ export default function MobileSimulator({
                           onClick={handleSaveProfile}
                           disabled={profileLoading}
                           style={{
-                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: 'none',
+                            width: '100%', padding: '0.65rem', borderRadius: '0px', border: 'none',
                             background: profileLoading ? '#93c5fd' : 'linear-gradient(135deg,#2d3a6d,#3b5edb)',
                             color: 'white', fontWeight: 700, fontSize: '0.85rem', cursor: profileLoading ? 'not-allowed' : 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
@@ -1302,18 +1302,18 @@ export default function MobileSimulator({
                       </div>
 
                       {/* ── Password card ── */}
-                      <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+                      <div style={{ background: 'white', borderRadius: '0px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.875rem', color: '#1a2744', fontWeight: 700, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                           <Lock size={14} color="#3b5edb" /> Changer le mot de passe
                         </div>
 
                         {pwdError && (
-                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
+                          <div style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '0px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#dc2626', fontSize: '0.78rem' }}>
                             <AlertCircle size={14} />{pwdError}
                           </div>
                         )}
                         {pwdSuccess && (
-                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
+                          <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '0px', padding: '0.6rem 0.75rem', marginBottom: '0.75rem', display: 'flex', gap: '0.5rem', alignItems: 'center', color: '#16a34a', fontSize: '0.78rem' }}>
                             <CheckCheck size={14} />{pwdSuccess}
                           </div>
                         )}
@@ -1329,7 +1329,7 @@ export default function MobileSimulator({
                                   type={show ? 'text' : 'password'}
                                   value={pwdForm[key]}
                                   onChange={e => setPwdForm(f => ({ ...f, [key]: e.target.value }))}
-                                  style={{ width: '100%', padding: '0.55rem 2.2rem 0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '10px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
+                                  style={{ width: '100%', padding: '0.55rem 2.2rem 0.55rem 0.75rem', border: '1.5px solid #e2e8f0', borderRadius: '0px', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s' }}
                                   onFocus={e => e.target.style.borderColor = '#3b5edb'}
                                   onBlur={e => e.target.style.borderColor = '#e2e8f0'}
                                 />
@@ -1349,7 +1349,7 @@ export default function MobileSimulator({
                           onClick={handleChangePassword}
                           disabled={pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm}
                           style={{
-                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: 'none',
+                            width: '100%', padding: '0.65rem', borderRadius: '0px', border: 'none',
                             background: (pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm) ? '#cbd5e1' : 'linear-gradient(135deg,#0f172a,#1d4ed8)',
                             color: 'white', fontWeight: 700, fontSize: '0.85rem',
                             cursor: (pwdLoading || !pwdForm.current || !pwdForm.next || !pwdForm.confirm) ? 'not-allowed' : 'pointer',
@@ -1367,7 +1367,7 @@ export default function MobileSimulator({
 
                       {/* Simulation control panel (Mobile Screen only) */}
                       {isMobileScreen && currentUser?.role === 'admin' && (
-                        <div style={{ background: 'white', borderRadius: '16px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+                        <div style={{ background: 'white', borderRadius: '0px', padding: '1rem', boxShadow: '0 2px 12px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.875rem' }}>
                             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1a2744', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                Contrôle Simulation
@@ -1486,7 +1486,7 @@ export default function MobileSimulator({
                           <button
                             onClick={() => setLayoutMode('admin')}
                             style={{
-                              width: '100%', padding: '0.65rem', borderRadius: '12px', border: '1px solid var(--border-color)',
+                              width: '100%', padding: '0.65rem', borderRadius: '0px', border: '1px solid var(--border-color)',
                               background: 'var(--bg-card)', color: 'var(--text-main)', fontWeight: 600, fontSize: '0.85rem', cursor: 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                               transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(0,0,0,0.05)'
@@ -1498,7 +1498,7 @@ export default function MobileSimulator({
                         <button
                           onClick={currentUser?.role === 'employee' && portalLogout ? portalLogout : handleLogout}
                           style={{
-                            width: '100%', padding: '0.65rem', borderRadius: '12px', border: '1px solid #fee2e2',
+                            width: '100%', padding: '0.65rem', borderRadius: '0px', border: '1px solid #fee2e2',
                             background: '#fff5f5', color: '#ef4444', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                             transition: 'all 0.2s', boxShadow: '0 2px 6px rgba(239,68,68,0.08)'
@@ -1650,7 +1650,7 @@ export default function MobileSimulator({
       {/* EXTERNAL GPS APP CHOOSER MODAL */}
       {showGpsChooser && selectedOp && (
         <div className="modal-overlay" style={{ zIndex: 3000 }}>
-          <div className="modal-content" style={{ maxWidth: '340px', padding: '1.75rem', borderRadius: '20px' }}>
+          <div className="modal-content" style={{ maxWidth: '340px', padding: '1.75rem', borderRadius: '0px' }}>
             <h3 style={{ fontSize: '1.125rem', marginBottom: '1.25rem', textAlign: 'center', fontWeight: 700 }}>
                Ouvrir l'itinéraire avec :
             </h3>
@@ -1659,7 +1659,7 @@ export default function MobileSimulator({
               {/* Google Maps — named destination with address text */}
               <button
                 className="btn btn-secondary"
-                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '0px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
                   if (client) {
@@ -1682,7 +1682,7 @@ export default function MobileSimulator({
               {/* Waze — address query for named place */}
               <button
                 className="btn btn-secondary"
-                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '0px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
                   if (client) {
@@ -1703,7 +1703,7 @@ export default function MobileSimulator({
               {/* OpenStreetMap — excellente couverture Afrique de l'Ouest, gratuit */}
               <button
                 className="btn btn-secondary"
-                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '12px' }}
+                style={{ justifyContent: 'flex-start', padding: '0.875rem 1rem', gap: '0.5rem', fontSize: '0.95rem', borderRadius: '0px' }}
                 onClick={() => {
                   const client = clients.find(c => c.id === selectedOp.clientId);
                   if (client?.gps) {
@@ -1726,7 +1726,7 @@ export default function MobileSimulator({
             <div className="modal-footer" style={{ marginTop: '1.25rem', justifyContent: 'center' }}>
               <button
                 className="btn btn-secondary"
-                style={{ padding: '0.5rem 1.5rem', borderRadius: '10px', fontSize: '0.9rem' }}
+                style={{ padding: '0.5rem 1.5rem', borderRadius: '0px', fontSize: '0.9rem' }}
                 onClick={() => setShowGpsChooser(false)}
               >
                 Annuler
@@ -1739,7 +1739,7 @@ export default function MobileSimulator({
       {/* REPORT ADDRESS ISSUE MODAL */}
       {showReportIssueModal && (
         <div className="modal-overlay" style={{ zIndex: 3000 }}>
-          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '20px' }}>
+          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '0px' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <AlertTriangle size={20} color="#f59e0b" /> Signaler une erreur d'adresse
             </h3>
@@ -1750,19 +1750,19 @@ export default function MobileSimulator({
               placeholder="Exemple : L'adresse de SIB est en fait sur l'Avenue Chardy et non sur le Boulevard de la République..."
               value={reportText}
               onChange={(e) => setReportText(e.target.value)}
-              style={{ width: '100%', height: '100px', padding: '0.5rem', borderRadius: '10px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginBottom: '1rem', fontFamily: 'inherit' }}
+              style={{ width: '100%', height: '100px', padding: '0.5rem', borderRadius: '0px', border: '1px solid #cbd5e1', fontSize: '0.85rem', outline: 'none', boxSizing: 'border-box', marginBottom: '1rem', fontFamily: 'inherit' }}
             />
             <div style={{ display: 'flex', gap: '0.5rem' }}>
               <button 
                 className="btn btn-secondary" 
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '10px' }}
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '0px' }}
                 onClick={() => { setShowReportIssueModal(false); setReportText(''); }}
               >
                 Annuler
               </button>
               <button 
                 className="btn btn-primary" 
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '10px', backgroundColor: '#f59e0b', border: 'none' }}
+                style={{ flex: 1, padding: '0.5rem', borderRadius: '0px', backgroundColor: '#f59e0b', border: 'none' }}
                 onClick={async () => {
                   if (!reportText.trim()) return;
                   try {
@@ -1798,7 +1798,7 @@ export default function MobileSimulator({
       {/* TRIP HISTORY MODAL */}
       {showHistoryModal && (
         <div className="modal-overlay" style={{ zIndex: 3000 }}>
-          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '20px' }}>
+          <div className="modal-content" style={{ maxWidth: '360px', padding: '1.5rem', borderRadius: '0px' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <History size={20} color="#3b5edb" /> Trajets de la journée
             </h3>
@@ -1816,7 +1816,7 @@ export default function MobileSimulator({
                 return completedToday.map(op => {
                   const client = clients.find(c => c.id === op.clientId);
                   return (
-                    <div key={op.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '0.75rem', textAlign: 'left' }}>
+                    <div key={op.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0px', padding: '0.75rem', textAlign: 'left' }}>
                       <div style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>{client?.name || 'Client'}</div>
                       <div style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '0.125rem' }}>{client?.address}</div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
@@ -1831,7 +1831,7 @@ export default function MobileSimulator({
 
             <button 
               className="btn btn-secondary" 
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '10px' }}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '0px' }}
               onClick={() => setShowHistoryModal(false)}
             >
               Fermer

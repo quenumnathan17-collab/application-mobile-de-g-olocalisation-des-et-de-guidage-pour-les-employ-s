@@ -1524,7 +1524,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .mobile-search-dropdown {
   background-color: var(--bg-card);
-  border-radius: 16px;
+  border-radius: 0px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   max-height: 200px;
   overflow-y: auto;

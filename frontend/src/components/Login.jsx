@@ -4,8 +4,66 @@ import {
   CircularProgress, Link, Dialog, DialogTitle, DialogContent,
   DialogActions, InputAdornment, IconButton, Tab, Tabs, Avatar
 } from '@mui/material';
+import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { Eye, EyeOff } from 'lucide-react';
 import BrandLogo from './BrandLogo';
+
+const loginTheme = createTheme({
+  shape: {
+    borderRadius: 0,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiTab: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiTabs: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiAlert: {
+      styleOverrides: {
+        root: {
+          borderRadius: 0,
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 0,
+        },
+      },
+    },
+  },
+});
 
 // ── Shared field styles ───────────────────────────────────────────────────────
 const fieldSx = {
@@ -464,7 +522,8 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
   const [tab, setTab] = useState(0); // 0 = connexion, 1 = inscription technicien, 2 = inscription entreprise
 
   return (
-    <Box sx={{
+    <ThemeProvider theme={loginTheme}>
+      <Box sx={{
       minHeight: '100vh',
       display: 'flex',
       alignItems: 'stretch',
@@ -626,5 +685,6 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
         </Typography>
       </Box>
     </Box>
+    </ThemeProvider>
   );
 }
