@@ -63,7 +63,8 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
       if (!res.ok) throw new Error(data.error || 'Erreur de connexion');
       localStorage.setItem('token', data.token);
       localStorage.setItem('user',  JSON.stringify(data.user));
-      onLoginSuccess(data.user);
+      localStorage.setItem('organization', JSON.stringify(data.organization));
+      onLoginSuccess(data.user, data.organization);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -158,7 +159,7 @@ function LoginForm({ onLoginSuccess, apiUrl = '' }) {
 // ── REGISTER FORM ─────────────────────────────────────────────────────────────
 function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', password: '', confirmPassword: '',
+    name: '', email: '', phone: '', password: '', confirmPassword: '', inviteCode: '',
   });
   const [avatar, setAvatar]     = useState(null);   // base64 data URL
   const [loading, setLoading]   = useState(false);
@@ -218,6 +219,7 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
           phone:    form.phone.trim(),
           password: form.password,
           avatar:   avatar || undefined,
+          inviteCode: form.inviteCode.trim(),
         }),
       });
       const data = await res.json();
@@ -297,6 +299,10 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
         <TextField fullWidth label="Nom complet *" variant="outlined" margin="dense"
           value={form.name} onChange={set('name')} required sx={fieldSx} />
 
+        <TextField fullWidth label="Code d'invitation entreprise *" variant="outlined" margin="dense"
+          placeholder="Ex: invite_ya_consulting"
+          value={form.inviteCode} onChange={set('inviteCode')} required sx={fieldSx} />
+
         <TextField fullWidth label="Adresse Email *" type="email" variant="outlined" margin="dense"
           value={form.email} onChange={set('email')} required sx={fieldSx} />
 
@@ -345,9 +351,117 @@ function RegisterForm({ onSwitchToLogin, apiUrl = '' }) {
   );
 }
 
+// ── REGISTER COMPANY FORM ─────────────────────────────────────────────────────
+function RegisterCompanyForm({ onSwitchToLogin, onLoginSuccess, apiUrl = '' }) {
+  const [form, setForm] = useState({
+    companyName: '', sector: '', email: '', phone: '', adminName: '', password: '', confirmPassword: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [showPwd, setShowPwd] = useState(false);
+
+  const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }));
+
+  const handleRegisterCompany = async (e) => {
+    e.preventDefault();
+    setError(''); setSuccess('');
+
+    if (form.password !== form.confirmPassword) {
+      return setError('Les mots de passe ne correspondent pas.');
+    }
+    if (form.password.length < 6) {
+      return setError('Le mot de passe doit contenir au moins 6 caractères.');
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch(`${apiUrl}/api/organizations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: form.companyName.trim(),
+          sector: form.sector.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          adminName: form.adminName.trim(),
+          password: form.password
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Erreur lors de la création de l'entreprise.");
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user',  JSON.stringify(data.user));
+      localStorage.setItem('organization', JSON.stringify(data.organization));
+
+      setSuccess("Entreprise enregistrée avec succès !");
+      setTimeout(() => onLoginSuccess(data.user, data.organization), 1500);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Box sx={{ mt: 1.5 }} />
+
+      {error && <Alert severity="error" sx={{ mb: 2, borderRadius: '12px' }}>{error}</Alert>}
+      {success && <Alert severity="success" sx={{ mb: 2, borderRadius: '12px' }}>{success}</Alert>}
+
+      <form onSubmit={handleRegisterCompany}>
+        <TextField fullWidth label="Nom de l'entreprise *" variant="outlined" margin="dense"
+          value={form.companyName} onChange={set('companyName')} required sx={fieldSx} />
+
+        <TextField fullWidth label="Secteur d'activité" variant="outlined" margin="dense"
+          placeholder="Ex: Sécurité, Logistique, Réseaux..."
+          value={form.sector} onChange={set('sector')} sx={fieldSx} />
+
+        <TextField fullWidth label="Nom de l'administrateur principal *" variant="outlined" margin="dense"
+          placeholder="Ex: Jean Koffi"
+          value={form.adminName} onChange={set('adminName')} required sx={fieldSx} />
+
+        <TextField fullWidth label="Adresse Email de connexion *" type="email" variant="outlined" margin="dense"
+          value={form.email} onChange={set('email')} required sx={fieldSx} />
+
+        <TextField fullWidth label="Numéro de téléphone" variant="outlined" margin="dense"
+          placeholder="+225 01 02 03 04 05"
+          value={form.phone} onChange={set('phone')} sx={fieldSx} />
+
+        <TextField fullWidth label="Mot de passe administrateur *" margin="dense"
+          type={showPwd ? 'text' : 'password'} variant="outlined"
+          value={form.password} onChange={set('password')} required
+          helperText="Au moins 6 caractères"
+          slotProps={{
+            input: {
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPwd(p => !p)} edge="end" sx={{ color: '#5e7290' }}>
+                    {showPwd ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }
+          }}
+          sx={fieldSx} />
+
+        <TextField fullWidth label="Confirmer le mot de passe *" type={showPwd ? 'text' : 'password'}
+          variant="outlined" margin="dense" value={form.confirmPassword}
+          onChange={set('confirmPassword')} required sx={fieldSx} />
+
+        <Button fullWidth type="submit" variant="contained" disabled={loading || !!success} sx={btnSx}>
+          {loading ? <CircularProgress size={24} color="inherit" /> : "Créer l'entreprise & Accéder"}
+        </Button>
+      </form>
+    </>
+  );
+}
+
 // ── MAIN LOGIN PAGE ───────────────────────────────────────────────────────────
 export default function Login({ onLoginSuccess, apiUrl = '' }) {
-  const [tab, setTab] = useState(0); // 0 = connexion, 1 = inscription
+  const [tab, setTab] = useState(0); // 0 = connexion, 1 = inscription technicien, 2 = inscription entreprise
 
   return (
     <Box sx={{
@@ -405,14 +519,14 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
             transition: 'text-shadow 0.3s',
             '&:hover': { textShadow: '0 0 20px rgba(255,255,255,0.3)' }
           }}>
-            YA CONSULTING
+            PORTAIL TERRAIN
           </Typography>
           <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.7)', fontWeight: 400, lineHeight: 1.6, mb: 5 }}>
-            Votre assistant pour coordonner nos experts en cybersécurité, réseaux et sécurité électronique et simplifier leurs interventions sur le terrain.
+            Votre plateforme cloud multi-entreprises pour coordonner vos collaborateurs et simplifier leurs interventions sur le terrain.
           </Typography>
 
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5, justifyContent: 'center' }}>
-            {['Cartographie temps réel', 'Guidage GPS', 'Gestion des équipes', 'Sécurisé RGPD'].map((f, i) => (
+            {['Cartographie temps réel', 'Guidage GPS', 'Gestion des équipes', 'Multi-Entreprises'].map((f, i) => (
               <Box key={i} sx={{
                 px: 2, py: 0.8, borderRadius: '999px',
                 background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)',
@@ -423,13 +537,6 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
               }}>{f}</Box>
             ))}
           </Box>
-        </Box>
-
-        {/* Bottom info */}
-        <Box sx={{ position: 'absolute', bottom: 32, left: 0, right: 0, textAlign: 'center' }}>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.4)', fontWeight: 500, letterSpacing: '0.05em' }}>
-            Riviera Palmeraie, Cocody, Abidjan — (225) 01 52 22 63 12
-          </Typography>
         </Box>
       </Box>
 
@@ -464,13 +571,13 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
           <Box sx={{ display: { xs: 'flex', md: 'none' }, flexDirection: 'column', alignItems: 'center', mb: 3, textAlign: 'center' }}>
             <BrandLogo width={64} showText={false} color="#3b5edb" />
             <Typography variant="h5" fontWeight={900} sx={{ mt: 1, color: '#2d3a6d', fontFamily: 'Outfit,sans-serif' }}>
-              YA CONSULTING
+              PORTAIL TERRAIN
             </Typography>
             <Typography variant="body2" sx={{ color: '#5e7290', mt: 1.2, px: 1, fontSize: '0.82rem', lineHeight: 1.45 }}>
-              Votre assistant pour coordonner nos experts en cybersécurité, réseaux et sécurité électronique et simplifier leurs interventions sur le terrain.
+              Votre plateforme cloud pour coordonner vos collaborateurs et simplifier leurs interventions sur le terrain.
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.8, justifyContent: 'center', mt: 1.8 }}>
-              {['Cartographie', 'Guidage GPS', 'Équipes', 'RGPD'].map((f, i) => (
+              {['Cartographie', 'Guidage GPS', 'Équipes', 'Multi-Tenant'].map((f, i) => (
                 <Box key={i} sx={{
                   px: 1.5, py: 0.4, borderRadius: 0,
                   background: 'rgba(59, 94, 219, 0.08)',
@@ -490,15 +597,16 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
               mb: 3, borderRadius: '0px', bgcolor: '#f0f4fb',
               '& .MuiTabs-indicator': { borderRadius: '0px', height: '100%', bgcolor: '#3b5edb', zIndex: 0 },
               '& .MuiTab-root': {
-                zIndex: 1, fontWeight: 700, textTransform: 'none', fontSize: '0.9rem',
+                zIndex: 1, fontWeight: 700, textTransform: 'none', fontSize: '0.85rem',
                 color: '#5e7290', borderRadius: '0px', transition: 'color 0.2s',
-                minHeight: '42px',
+                minHeight: '42px', px: 1
               },
               '& .Mui-selected': { color: '#fff !important' },
             }}
           >
-            <Tab label="Connexion"    id="tab-login"    aria-controls="panel-login" />
+            <Tab label="Connexion" id="tab-login" aria-controls="panel-login" />
             <Tab label="Inscription" id="tab-register" aria-controls="panel-register" />
+            <Tab label="Créer Entreprise" id="tab-register-company" aria-controls="panel-register-company" />
           </Tabs>
 
           {/* Tab panels */}
@@ -508,10 +616,13 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
           <Box role="tabpanel" id="panel-register" aria-labelledby="tab-register" hidden={tab !== 1}>
             {tab === 1 && <RegisterForm onSwitchToLogin={() => setTab(0)} apiUrl={apiUrl} />}
           </Box>
+          <Box role="tabpanel" id="panel-register-company" aria-labelledby="tab-register-company" hidden={tab !== 2}>
+            {tab === 2 && <RegisterCompanyForm onSwitchToLogin={() => setTab(0)} onLoginSuccess={onLoginSuccess} apiUrl={apiUrl} />}
+          </Box>
         </Paper>
 
         <Typography variant="caption" sx={{ color: { xs: 'rgba(255,255,255,0.5)', md: '#8899b5' }, fontWeight: 500, mb: 3 }}>
-          © {new Date().getFullYear()} YA Consulting — Tous droits réservés
+          © {new Date().getFullYear()} Portail Terrain — Tous droits réservés
         </Typography>
       </Box>
     </Box>

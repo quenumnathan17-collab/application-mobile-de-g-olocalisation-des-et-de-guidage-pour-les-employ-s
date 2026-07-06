@@ -11,9 +11,9 @@ export default defineConfig({
       
       // Manifest — identité de l'app installable
       manifest: {
-        name: 'YA Consulting — Portail Terrain',
-        short_name: 'YA Terrain',
-        description: 'Géolocalisation des clients et guidage GPS pour les équipes d’intervention de YA Consulting.',
+        name: 'Portail Terrain — Géolocalisation & Guidage',
+        short_name: 'Portail Terrain',
+        description: 'Géolocalisation des clients et guidage GPS pour les équipes d’intervention sur le terrain.',
         theme_color: '#2d3a6d',
         background_color: '#0a0a1a',
         display: 'standalone',          // plein écran, sans barre du navigateur
@@ -55,7 +55,7 @@ export default defineConfig({
             sizes: '512x512',
             type: 'image/png',
             form_factor: 'narrow',
-            label: 'YA Consulting — Portail Terrain'
+            label: 'Portail Terrain'
           }
         ]
       },

@@ -9,6 +9,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  email       String   @unique
+  phone       String   @default("")
+  sector      String   @default("")
+  logo        String   @default("")
+  inviteCode  String   @unique @default(uuid())
+  createdAt   DateTime @default(now())
+
+  employees      Employee[]
+  clients        Client[]
+  operations     Operation[]
+  addressReports AddressReport[]
+}
+
 model Employee {
   id                String @id
   name              String
@@ -22,6 +39,9 @@ model Employee {
   workingHoursEnd   String
   avatar            String
   password          String @default("")
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model Client {
@@ -36,6 +56,9 @@ model Client {
   contactName String  @default("")
   notes       String  @default("")
   archived    Boolean @default(false)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model Operation {
@@ -46,6 +69,9 @@ model Operation {
   employeeId  String
   status      String
   createdAt   DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }
 
 model AddressReport {
@@ -54,4 +80,7 @@ model AddressReport {
   employeeName String
   message      String
   createdAt    DateTime @default(now())
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
 }

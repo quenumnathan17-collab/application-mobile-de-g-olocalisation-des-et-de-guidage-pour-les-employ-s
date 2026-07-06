@@ -140,22 +140,53 @@ async function main() {
   await prisma.operation.deleteMany({});
   await prisma.client.deleteMany({});
   await prisma.employee.deleteMany({});
+  await prisma.organization.deleteMany({});
+
+  // 1. Création de l'organisation YA Consulting par défaut
+  const org = await prisma.organization.create({
+    data: {
+      id: "org_ya_consulting",
+      name: "YA Consulting",
+      slug: "ya-consulting",
+      email: "info@yaconsulting.ci",
+      phone: "+225 07 08 09 10 11",
+      sector: "Sécurité & Réseaux",
+      inviteCode: "invite_ya_consulting",
+      logo: ""
+    }
+  });
 
   const hashedPassword = await bcrypt.hash('password123', 10);
 
-  // Insertion des employés
+  // Insertion des employés liés à l'organisation
   for (const emp of initialEmployees) {
-    await prisma.employee.create({ data: { ...emp, password: hashedPassword } });
+    await prisma.employee.create({ 
+      data: { 
+        ...emp, 
+        password: hashedPassword,
+        organizationId: org.id
+      } 
+    });
   }
 
-  // Insertion des clients
+  // Insertion des clients liés à l'organisation
   for (const client of initialClients) {
-    await prisma.client.create({ data: client });
+    await prisma.client.create({ 
+      data: { 
+        ...client,
+        organizationId: org.id
+      } 
+    });
   }
 
-  // Insertion des opérations
+  // Insertion des opérations liées à l'organisation
   for (const op of initialOperations) {
-    await prisma.operation.create({ data: op });
+    await prisma.operation.create({ 
+      data: { 
+        ...op,
+        organizationId: org.id
+      } 
+    });
   }
 
   console.log("Données de test ivoiriennes insérées avec succès !");

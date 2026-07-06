@@ -37,7 +37,8 @@ import {
   ListItemText,
   ListItemAvatar,
   IconButton,
-  Autocomplete
+  Autocomplete,
+  CircularProgress
 } from '@mui/material';
 import {
   Map as MapIcon,
@@ -62,7 +63,10 @@ import {
   Place as PlaceIcon,
   OpenInNew as OpenInNewIcon,
   BarChart as BarChartIcon,
-  PictureAsPdf as PictureAsPdfIcon
+  PictureAsPdf as PictureAsPdfIcon,
+  MyLocation as MyLocationIcon,
+  GpsFixed as GpsFixedIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 
@@ -88,7 +92,9 @@ export default function AdminDashboard({
   addEmployee,
   updateEmployee,
   deleteEmployee,
-  layoutMode
+  layoutMode,
+  currentOrg,
+  setCurrentOrg
 }) {
   const [activeTab, setActiveTab] = useState(0); // 0: supervision, 1: clients, 2: operations, 3: rapports
   const [addressReports, setAddressReports] = useState([]);
@@ -160,6 +166,41 @@ export default function AdminDashboard({
   const [showManualGps, setShowManualGps] = useState(false);
   const [manualLat, setManualLat] = useState('');
   const [manualLng, setManualLng] = useState('');
+  const [geolocating, setGeolocating] = useState(false);
+
+  // ── Géolocalisation automatique via GPS du téléphone ──
+  const handleDeviceGeolocation = (targetLatSetter, targetLngSetter, onDone) => {
+    if (!navigator.geolocation) {
+      setGeocodingAlert({ type: 'error', text: 'La géolocalisation n\'est pas supportée par votre navigateur.' });
+      return;
+    }
+    setGeolocating(true);
+    setGeocodingAlert(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        targetLatSetter(String(lat.toFixed(6)));
+        targetLngSetter(String(lng.toFixed(6)));
+        setShowManualGps(true);
+        setGeocodingAlert({
+          type: 'success',
+          text: `Position GPS detectee : Lat ${lat.toFixed(6)}, Lng ${lng.toFixed(6)} (precision: ${Math.round(position.coords.accuracy)}m)`
+        });
+        setGeolocating(false);
+        if (onDone) onDone(lat, lng);
+      },
+      (error) => {
+        let msg = 'Impossible d\'obtenir votre position GPS.';
+        if (error.code === 1) msg = 'Permission de géolocalisation refusée. Autorisez l\'accès dans les paramètres de votre navigateur.';
+        else if (error.code === 2) msg = 'Position indisponible. Vérifiez que le GPS est activé sur votre appareil.';
+        else if (error.code === 3) msg = 'Délai de géolocalisation dépassé. Réessayez.';
+        setGeocodingAlert({ type: 'error', text: msg });
+        setGeolocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  };
   // Address autocomplete
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -840,6 +881,7 @@ export default function AdminDashboard({
             <Tab icon={<BarChartIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Activité & Rapports" sx={{ fontWeight: 600, minHeight: 64 }} />
             <Tab icon={<PersonIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Votre Équipe" sx={{ fontWeight: 600, minHeight: 64 }} />
             <Tab icon={<WarningIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Signalements" sx={{ fontWeight: 600, minHeight: 64 }} />
+            <Tab icon={<SettingsIcon sx={{ fontSize: 20, transition: 'transform 0.25s' }} />} iconPosition="start" label="Paramètres" sx={{ fontWeight: 600, minHeight: 64 }} />
           </Tabs>
         </Box>
 
@@ -1728,6 +1770,151 @@ export default function AdminDashboard({
             </Box>
           )}
 
+          {/* TAB 6: PARAMETRES ENTREPRISE */}
+          {activeTab === 6 && (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, maxWidth: 600, mx: 'auto', mt: 2 }}>
+              <Paper sx={{ p: 4, borderRadius: 0, border: '1px solid', borderColor: 'divider', bgcolor: 'background.paper' }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, mb: 1, fontFamily: 'Outfit, sans-serif' }}>
+                  Paramètres de l'Entreprise
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
+                  Gérez l'identité visuelle de votre entreprise et les paramètres d'accès de vos techniciens.
+                </Typography>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Info Card */}
+                <Grid container spacing={3} sx={{ mb: 4 }}>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Nom de l'entreprise
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {currentOrg?.name || 'YA Consulting'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Secteur d'activité
+                    </Typography>
+                    <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      {currentOrg?.sector || '—'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                      E-mail de contact
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.primary' }}>
+                      {currentOrg?.email || '—'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Téléphone de contact
+                    </Typography>
+                    <Typography variant="body1" sx={{ color: 'text.primary' }}>
+                      {currentOrg?.phone || '—'}
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Logo Section */}
+                <Box sx={{ mb: 4 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                    Logo de l'organisation
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                    Ce logo apparaîtra dans l'en-tête de votre portail d'interventions.
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 3, flexWrap: 'wrap' }}>
+                    <Box sx={{
+                      width: 120, height: 120, border: '1px solid', borderColor: 'divider',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      bgcolor: 'action.hover', position: 'relative', overflow: 'hidden'
+                    }}>
+                      {currentOrg?.logo ? (
+                        <img src={currentOrg.logo} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                      ) : (
+                        <BusinessIcon sx={{ fontSize: 48, color: 'text.secondary' }} />
+                      )}
+                    </Box>
+                    
+                    <Box>
+                      <Button variant="outlined" component="label" sx={{ borderRadius: 0, textTransform: 'none', mb: 1 }}>
+                        Sélectionner un logo
+                        <input type="file" hidden accept="image/*" onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          if (file.size > 2 * 1024 * 1024) {
+                            alert("Le logo ne doit pas dépasser 2 Mo.");
+                            return;
+                          }
+                          const reader = new FileReader();
+                          reader.onloadend = async () => {
+                            const base64 = reader.result;
+                            try {
+                              const token = localStorage.getItem('token');
+                              const res = await fetch('/api/organizations/logo', {
+                                method: 'PUT',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ logo: base64 })
+                              });
+                              if (!res.ok) throw new Error("Erreur de mise à jour du logo");
+                              const updatedOrg = await res.json();
+                              setCurrentOrg(updatedOrg);
+                              localStorage.setItem('organization', JSON.stringify(updatedOrg));
+                              alert("Logo mis à jour avec succès !");
+                            } catch (err) {
+                              alert(err.message);
+                            }
+                          };
+                          reader.readAsDataURL(file);
+                        }} />
+                      </Button>
+                      <Typography variant="caption" display="block" sx={{ color: 'text.secondary' }}>
+                        Fichiers acceptés : PNG, JPG, WebP. Taille maximale : 2 Mo.
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Divider sx={{ my: 2 }} />
+
+                {/* Invite Code Section */}
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: 'text.primary' }}>
+                    Accès des techniciens
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
+                    Partagez ce code d'invitation avec vos techniciens pour qu'ils puissent s'inscrire eux-mêmes et rejoindre votre entreprise.
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <TextField
+                      size="small"
+                      value={currentOrg?.inviteCode || ''}
+                      slotProps={{ input: { readOnly: true } }}
+                      sx={{ flexGrow: 1, '& .MuiOutlinedInput-root': { borderRadius: 0 } }}
+                    />
+                    <Button variant="contained" sx={{ borderRadius: 0, textTransform: 'none', height: 40 }} onClick={() => {
+                      navigator.clipboard.writeText(currentOrg?.inviteCode || '');
+                      alert("Code d'invitation copié dans le presse-papiers !");
+                    }}>
+                      Copier
+                    </Button>
+                  </Box>
+                </Box>
+              </Paper>
+            </Box>
+          )}
+
         </Box>
 
         {/* MODAL: ADD CLIENT */}
@@ -1818,18 +2005,35 @@ export default function AdminDashboard({
                 )}
               />
 
-              {/* ── GPS Manuel (toggle) ── */}
-              <Box>
-                <Button
-                  size="small"
-                  variant={showManualGps ? 'contained' : 'outlined'}
-                  color={showManualGps ? 'secondary' : 'inherit'}
-                  startIcon={<LocationOnIcon />}
-                  onClick={() => setShowManualGps(v => !v)}
-                  sx={{ mb: showManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
-                >
-                  {showManualGps ? ' GPS Manuel activé' : ' Saisir les coordonnées GPS manuellement'}
-                </Button>
+              {/* ── Options de géolocalisation ── */}
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                  {/* Bouton Géolocalisation automatique */}
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="primary"
+                    startIcon={geolocating ? <CircularProgress size={16} color="inherit" /> : <MyLocationIcon />}
+                    onClick={() => handleDeviceGeolocation(setManualLat, setManualLng)}
+                    disabled={geolocating}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    {geolocating ? 'Localisation...' : 'Me géolocaliser'}
+                  </Button>
+
+                  {/* Bouton GPS Manuel */}
+                  <Button
+                    size="small"
+                    variant={showManualGps ? 'contained' : 'outlined'}
+                    color={showManualGps ? 'secondary' : 'inherit'}
+                    startIcon={<GpsFixedIcon />}
+                    onClick={() => setShowManualGps(v => !v)}
+                    sx={{ fontSize: '0.8rem' }}
+                  >
+                    {showManualGps ? 'GPS Manuel activé' : 'Coordonnées GPS manuelles'}
+                  </Button>
+                </Box>
+
                 {showManualGps && (
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
@@ -1985,18 +2189,39 @@ export default function AdminDashboard({
                   )}
                 />
 
-                {/* GPS manuel edit */}
-                <Box>
-                  <Button
-                    size="small"
-                    variant={editClientData?.useManualGps ? 'contained' : 'outlined'}
-                    color={editClientData?.useManualGps ? 'secondary' : 'inherit'}
-                    startIcon={<LocationOnIcon />}
-                    onClick={() => setEditClientData({ ...editClientData, useManualGps: !editClientData.useManualGps })}
-                    sx={{ mb: editClientData?.useManualGps ? 1.5 : 0, fontSize: '0.8rem' }}
-                  >
-                    {editClientData?.useManualGps ? ' GPS Manuel activé' : ' Saisir coordonnées GPS manuellement'}
-                  </Button>
+                {/* GPS options edit */}
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {/* Bouton Géolocalisation automatique */}
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      startIcon={geolocating ? <CircularProgress size={16} color="inherit" /> : <MyLocationIcon />}
+                      onClick={() => handleDeviceGeolocation(
+                        (v) => setEditClientData(d => ({ ...d, manualLat: v })),
+                        (v) => setEditClientData(d => ({ ...d, manualLng: v })),
+                        () => setEditClientData(d => ({ ...d, useManualGps: true }))
+                      )}
+                      disabled={geolocating}
+                      sx={{ fontSize: '0.8rem' }}
+                    >
+                      {geolocating ? 'Localisation...' : 'Me géolocaliser'}
+                    </Button>
+
+                    {/* Bouton GPS Manuel */}
+                    <Button
+                      size="small"
+                      variant={editClientData?.useManualGps ? 'contained' : 'outlined'}
+                      color={editClientData?.useManualGps ? 'secondary' : 'inherit'}
+                      startIcon={<GpsFixedIcon />}
+                      onClick={() => setEditClientData({ ...editClientData, useManualGps: !editClientData.useManualGps })}
+                      sx={{ fontSize: '0.8rem' }}
+                    >
+                      {editClientData?.useManualGps ? 'GPS Manuel activé' : 'Coordonnées GPS manuelles'}
+                    </Button>
+                  </Box>
+
                   {editClientData?.useManualGps && (
                     <Grid container spacing={2}>
                       <Grid item xs={6}>

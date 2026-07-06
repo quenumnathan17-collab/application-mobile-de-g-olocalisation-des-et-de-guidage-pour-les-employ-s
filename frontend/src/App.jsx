@@ -46,10 +46,22 @@ export default function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
+  const [currentOrg, setCurrentOrg] = useState(() => {
+    const saved = localStorage.getItem('organization');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('organization');
     setCurrentUser(null);
+    setCurrentOrg(null);
+  };
+
+  const handleLoginSuccess = (user, organization) => {
+    setCurrentUser(user);
+    setCurrentOrg(organization);
   };
 
   const API_URL = import.meta.env.VITE_API_URL || '';
@@ -317,7 +329,7 @@ export default function App() {
   };
 
   if (!currentUser) {
-    return <Login onLoginSuccess={setCurrentUser} apiUrl={API_URL} />;
+    return <Login onLoginSuccess={handleLoginSuccess} apiUrl={API_URL} />;
   }
 
   // Force layout based on role or screen size
@@ -334,8 +346,12 @@ export default function App() {
       {showHeader && (
         <header className="app-header">
         <div className="header-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <BrandLogo width={36} showText={false} color="#4f46e5" />
-          <span>YA Consulting <span>— Portail Terrain</span></span>
+          {currentOrg?.logo ? (
+            <img src={currentOrg.logo} alt="Logo" style={{ height: '32px', width: 'auto', objectFit: 'contain' }} />
+          ) : (
+            <BrandLogo width={36} showText={false} color="#4f46e5" />
+          )}
+          <span>{currentOrg?.name || 'YA Consulting'} <span>— Portail Terrain</span></span>
         </div>
 
         {/* Layout Switcher Buttons (Only visible for Admins) */}
@@ -398,6 +414,8 @@ export default function App() {
             updateEmployee={updateEmployee}
             deleteEmployee={deleteEmployee}
             layoutMode={effectiveLayoutMode}
+            currentOrg={currentOrg}
+            setCurrentOrg={setCurrentOrg}
           />
         )}
 

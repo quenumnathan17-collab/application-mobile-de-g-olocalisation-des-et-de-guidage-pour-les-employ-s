@@ -18,9 +18,116 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+const AVATAR_PRESETS = [
+  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
+  "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
+];
+
 // --- API ROUTES ---
 
-// --- 0. Auth & SSE ---
+// --- 0. Auth & SaaS Onboarding ---
+
+// --- SaaS Onboarding (Create Organization + Admin account) ---
+app.post('/api/organizations', async (req, res) => {
+  const { companyName, email, phone, sector, adminName, password } = req.body;
+
+  if (!companyName || !email || !adminName || !password) {
+    return res.status(400).json({ error: "Nom de l'entreprise, email, nom de l'administrateur et mot de passe requis." });
+  }
+
+  try {
+    const slug = companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    
+    // Check conflicts
+    const existingOrg = await prisma.organization.findFirst({
+      where: { OR: [{ email }, { slug }] }
+    });
+    if (existingOrg) {
+      return res.status(400).json({ error: "Cette entreprise ou cet e-mail est déjà enregistré." });
+    }
+
+    const existingEmp = await prisma.employee.findFirst({
+      where: { email }
+    });
+    if (existingEmp) {
+      return res.status(400).json({ error: "Cet e-mail est déjà utilisé pour un compte collaborateur." });
+    }
+
+    // Generate random invite code
+    const inviteCode = 'invite_' + Math.random().toString(36).substring(2, 9);
+
+    // Create organization
+    const newOrg = await prisma.organization.create({
+      data: {
+        name: companyName.trim(),
+        slug,
+        email: email.trim().toLowerCase(),
+        phone: phone ? phone.trim() : "",
+        sector: sector ? sector.trim() : "",
+        inviteCode,
+        logo: ""
+      }
+    });
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const avatar = AVATAR_PRESETS[0];
+
+    const newEmp = await prisma.employee.create({
+      data: {
+        id: `emp_admin_${Date.now()}`,
+        name: adminName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: phone ? phone.trim() : "",
+        role: 'admin',
+        status: 'active',
+        latitude: 5.3600,
+        longitude: -4.0083,
+        workingHoursStart: "08:00",
+        workingHoursEnd: "18:00",
+        avatar,
+        password: hashedPassword,
+        organizationId: newOrg.id
+      }
+    });
+
+    // Create JWT
+    const token = jwt.sign(
+      { id: newEmp.id, role: newEmp.role, name: newEmp.name, organizationId: newOrg.id },
+      JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        id: newEmp.id,
+        name: newEmp.name,
+        email: newEmp.email,
+        phone: newEmp.phone,
+        role: newEmp.role,
+        avatar: newEmp.avatar,
+        organizationId: newOrg.id
+      },
+      organization: {
+        id: newOrg.id,
+        name: newOrg.name,
+        slug: newOrg.slug,
+        logo: newOrg.logo,
+        inviteCode: newOrg.inviteCode
+      }
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Login (Authenticates users inside their tenant) ---
 app.post('/api/login', async (req, res) => {
   let { identifier, password } = req.body; // Can be email or phone
   identifier = identifier ? identifier.trim() : identifier;
@@ -52,8 +159,13 @@ app.post('/api/login', async (req, res) => {
       return res.status(401).json({ error: "Identifiants incorrects." });
     }
 
+    // Fetch tenant organization
+    const org = await prisma.organization.findUnique({
+      where: { id: user.organizationId }
+    });
+
     const token = jwt.sign(
-      { id: user.id, role: user.role, name: user.name }, 
+      { id: user.id, role: user.role, name: user.name, organizationId: user.organizationId }, 
       JWT_SECRET, 
       { expiresIn: '24h' }
     );
@@ -66,20 +178,28 @@ app.post('/api/login', async (req, res) => {
         email: user.email,
         phone: user.phone,
         role: user.role,
-        avatar: user.avatar
-      }
+        avatar: user.avatar,
+        organizationId: user.organizationId
+      },
+      organization: org ? {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        logo: org.logo,
+        inviteCode: org.inviteCode
+      } : null
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// --- REGISTER (public) ---
+// --- REGISTER (public self-registration using inviteCode) ---
 app.post('/api/register', async (req, res) => {
-  let { name, email, phone, password, avatar, specialty, commune } = req.body;
+  let { name, email, phone, password, avatar, inviteCode } = req.body;
   
-  if (!name || !email || !phone || !password) {
-    return res.status(400).json({ error: "Nom, email, téléphone et mot de passe sont obligatoires." });
+  if (!name || !email || !phone || !password || !inviteCode) {
+    return res.status(400).json({ error: "Nom, email, téléphone, mot de passe et code d'invitation d'entreprise sont obligatoires." });
   }
 
   // Basic email validation
@@ -93,6 +213,14 @@ app.post('/api/register', async (req, res) => {
   }
 
   try {
+    // Verify invite code
+    const org = await prisma.organization.findUnique({
+      where: { inviteCode: inviteCode.trim() }
+    });
+    if (!org) {
+      return res.status(400).json({ error: "Code d'invitation invalide. Veuillez demander le code à l'administrateur de votre entreprise." });
+    }
+
     const existing = await prisma.employee.findFirst({
       where: { OR: [{ email }, { phone }] }
     });
@@ -102,8 +230,6 @@ app.post('/api/register', async (req, res) => {
 
     const empCount = await prisma.employee.count();
     const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Default avatar if not provided
     const chosenAvatar = avatar || AVATAR_PRESETS[empCount % AVATAR_PRESETS.length];
     
     const newEmp = await prisma.employee.create({
@@ -119,7 +245,8 @@ app.post('/api/register', async (req, res) => {
         workingHoursStart: "08:00",
         workingHoursEnd: "18:00",
         avatar: chosenAvatar,
-        password: hashedPassword
+        password: hashedPassword,
+        organizationId: org.id
       }
     });
 
@@ -138,6 +265,7 @@ app.post('/api/register', async (req, res) => {
   }
 });
 
+// --- Reset Password Simulation ---
 app.post('/api/reset-password', async (req, res) => {
   const { identifier } = req.body;
   if (!identifier) return res.status(400).json({ error: "Identifiant requis." });
@@ -153,7 +281,6 @@ app.post('/api/reset-password', async (req, res) => {
     });
     
     if (!user) {
-      // In production, to prevent enumeration, we might just say "Si le compte existe..."
       return res.status(404).json({ error: "Aucun compte associé à cet identifiant." });
     }
 
@@ -192,7 +319,7 @@ const authenticateToken = (req, res, next) => {
 
   jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) return res.status(403).json({ error: "Session expirée ou token invalide." });
-    req.user = decoded;
+    req.user = decoded; // { id, role, name, organizationId }
     next();
   });
 };
@@ -206,10 +333,37 @@ const requireRole = (role) => {
   };
 };
 
+// --- TENANT API OPERATIONS ---
+
+// --- Organization settings ---
+app.put('/api/organizations/logo', authenticateToken, requireRole('admin'), async (req, res) => {
+  const { logo } = req.body;
+  if (logo === undefined) return res.status(400).json({ error: "Données du logo manquantes." });
+
+  try {
+    const updated = await prisma.organization.update({
+      where: { id: req.user.organizationId },
+      data: { logo }
+    });
+
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      slug: updated.slug,
+      logo: updated.logo,
+      inviteCode: updated.inviteCode
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // 1. Clients
 app.get('/api/clients', authenticateToken, async (req, res) => {
   try {
-    const clients = await prisma.client.findMany();
+    const clients = await prisma.client.findMany({
+      where: { organizationId: req.user.organizationId }
+    });
     const mapped = clients.map(c => ({
       id: c.id,
       name: c.name,
@@ -248,7 +402,8 @@ app.post('/api/clients', authenticateToken, requireRole('admin'), async (req, re
         email: email || "",
         contactName: contactName || "",
         notes: notes || "",
-        archived: false
+        archived: false,
+        organizationId: req.user.organizationId
       }
     });
 
@@ -274,6 +429,11 @@ app.put('/api/clients/:id', authenticateToken, requireRole('admin'), async (req,
   const { name, type, address, archived, lat, lng, phone, email, contactName, notes } = req.body;
 
   try {
+    const client = await prisma.client.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
+    if (!client) return res.status(404).json({ error: "Client introuvable." });
+
     const dataToUpdate = { name, type, address, archived };
     if (lat !== undefined && lng !== undefined) {
       dataToUpdate.latitude = lat;
@@ -309,7 +469,9 @@ app.put('/api/clients/:id', authenticateToken, requireRole('admin'), async (req,
 // 2. Employees
 app.get('/api/employees', authenticateToken, async (req, res) => {
   try {
-    const employees = await prisma.employee.findMany();
+    const employees = await prisma.employee.findMany({
+      where: { organizationId: req.user.organizationId }
+    });
     const mapped = employees.map(e => ({
       id: e.id,
       name: e.name,
@@ -327,17 +489,6 @@ app.get('/api/employees', authenticateToken, async (req, res) => {
   }
 });
 
-const AVATAR_PRESETS = [
-  "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
-  "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
-];
-
 app.post('/api/employees', authenticateToken, requireRole('admin'), async (req, res) => {
   const { name, email, phone, role, avatar } = req.body;
   if (!name || !email || !phone || !role) {
@@ -345,7 +496,6 @@ app.post('/api/employees', authenticateToken, requireRole('admin'), async (req, 
   }
 
   try {
-    // Check if exists
     const existing = await prisma.employee.findFirst({
       where: { OR: [{ email }, { phone }] }
     });
@@ -355,8 +505,6 @@ app.post('/api/employees', authenticateToken, requireRole('admin'), async (req, 
 
     const empCount = await prisma.employee.count();
     const hashedPassword = await bcrypt.hash('password123', 10);
-    
-    // Select random avatar preset if not provided
     const chosenAvatar = avatar || AVATAR_PRESETS[empCount % AVATAR_PRESETS.length];
     
     const newEmp = await prisma.employee.create({
@@ -367,12 +515,13 @@ app.post('/api/employees', authenticateToken, requireRole('admin'), async (req, 
         phone,
         role,
         status: "active",
-        latitude: 5.3600, // Default to Abidjan center
+        latitude: 5.3600,
         longitude: -4.0083,
         workingHoursStart: "08:00",
         workingHoursEnd: "18:00",
         avatar: chosenAvatar,
-        password: hashedPassword
+        password: hashedPassword,
+        organizationId: req.user.organizationId
       }
     });
 
@@ -397,6 +546,11 @@ app.put('/api/employees/:id', authenticateToken, requireRole('admin'), async (re
   const { name, email, phone, role, status, avatar } = req.body;
 
   try {
+    const employee = await prisma.employee.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
+    if (!employee) return res.status(404).json({ error: "Employé introuvable dans cette entreprise." });
+
     const updated = await prisma.employee.update({
       where: { id },
       data: { name, email, phone, role, status, avatar }
@@ -421,6 +575,11 @@ app.put('/api/employees/:id', authenticateToken, requireRole('admin'), async (re
 app.delete('/api/employees/:id', authenticateToken, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   try {
+    const employee = await prisma.employee.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
+    if (!employee) return res.status(404).json({ error: "Employé introuvable dans cette entreprise." });
+
     await prisma.employee.delete({
       where: { id }
     });
@@ -430,11 +589,10 @@ app.delete('/api/employees/:id', authenticateToken, requireRole('admin'), async 
   }
 });
 
-// Update own profile (employee or admin)
+// Update own profile
 app.put('/api/employees/:id/profile', authenticateToken, async (req, res) => {
   const { id } = req.params;
 
-  // Only allow if owner or admin
   if (req.user.id !== id && req.user.role !== 'admin') {
     return res.status(403).json({ error: "Accès refusé." });
   }
@@ -442,14 +600,15 @@ app.put('/api/employees/:id/profile', authenticateToken, async (req, res) => {
   const { name, email, phone, avatar, currentPassword, newPassword } = req.body;
 
   try {
-    const user = await prisma.employee.findUnique({ where: { id } });
+    const user = await prisma.employee.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
     if (!user) return res.status(404).json({ error: "Employé introuvable." });
 
     const dataToUpdate = {};
 
     if (name  && name.trim())  dataToUpdate.name  = name.trim();
     if (email && email.trim()) {
-      // Check uniqueness
       const conflict = await prisma.employee.findFirst({
         where: { email: email.trim().toLowerCase(), NOT: { id } }
       });
@@ -459,7 +618,6 @@ app.put('/api/employees/:id/profile', authenticateToken, async (req, res) => {
     if (phone && phone.trim()) dataToUpdate.phone = phone.trim();
     if (avatar !== undefined)  dataToUpdate.avatar = avatar;
 
-    // Password change
     if (newPassword) {
       if (!currentPassword) return res.status(400).json({ error: "Veuillez fournir votre mot de passe actuel." });
       const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -486,6 +644,7 @@ app.put('/api/employees/:id/profile', authenticateToken, async (req, res) => {
   }
 });
 
+// Update tech live GPS
 app.put('/api/employees/:id/gps', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { lat, lng } = req.body;
@@ -494,9 +653,8 @@ app.put('/api/employees/:id/gps', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: "Coordonnées lat et lng obligatoires" });
   }
 
-  // Optional: check if req.user.id === id || req.user.role === 'admin'
   if (req.user.id !== id && req.user.role !== 'admin') {
-    return res.status(403).json({ error: "Accès refusé pour mettre à jour ce GPS." });
+    return res.status(403).json({ error: "Accès refusé." });
   }
 
   try {
@@ -508,6 +666,13 @@ app.put('/api/employees/:id/gps', authenticateToken, async (req, res) => {
       }
     });
 
+    broadcastEvent({
+      type: 'EMPLOYEE_GPS_UPDATED',
+      employeeId: id,
+      organizationId: req.user.organizationId,
+      gps: { lat, lng }
+    });
+
     res.json({
       id: updated.id,
       name: updated.name,
@@ -516,7 +681,6 @@ app.put('/api/employees/:id/gps', authenticateToken, async (req, res) => {
       role: updated.role,
       status: updated.status,
       gps: { lat: updated.latitude, lng: updated.longitude },
-      workingHours: { start: updated.workingHoursStart, end: updated.workingHoursEnd },
       avatar: updated.avatar
     });
   } catch (err) {
@@ -527,7 +691,9 @@ app.put('/api/employees/:id/gps', authenticateToken, async (req, res) => {
 // 3. Operations
 app.get('/api/operations', authenticateToken, async (req, res) => {
   try {
-    const operations = await prisma.operation.findMany();
+    const operations = await prisma.operation.findMany({
+      where: { organizationId: req.user.organizationId }
+    });
     res.json(operations);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -549,13 +715,14 @@ app.post('/api/operations', authenticateToken, requireRole('admin'), async (req,
         description,
         date,
         employeeId,
-        status: "planifiée"
+        status: "planifiée",
+        organizationId: req.user.organizationId
       }
     });
 
-    // Notify clients about the new assignment
     broadcastEvent({
       type: 'OPERATION_ASSIGNED',
+      organizationId: req.user.organizationId,
       operationId: newOp.id,
       employeeId: employeeId,
       message: `Nouvelle mission assignée pour le ${new Date(date).toLocaleDateString()}`
@@ -576,14 +743,19 @@ app.put('/api/operations/:id/status', authenticateToken, async (req, res) => {
   }
 
   try {
+    const op = await prisma.operation.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
+    if (!op) return res.status(404).json({ error: "Opération introuvable." });
+
     const updated = await prisma.operation.update({
       where: { id },
       data: { status }
     });
 
-    // Notify clients about the status change
     broadcastEvent({
       type: 'OPERATION_STATUS_CHANGED',
+      organizationId: req.user.organizationId,
       operationId: id,
       newStatus: status,
       message: `La mission ${id} est maintenant: ${status}`
@@ -594,10 +766,12 @@ app.put('/api/operations/:id/status', authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-// --- 6. Address Reports ---
+
+// 4. Address Reports
 app.get('/api/address-reports', authenticateToken, requireRole('admin'), async (req, res) => {
   try {
     const reports = await prisma.addressReport.findMany({
+      where: { organizationId: req.user.organizationId },
       orderBy: { createdAt: 'desc' }
     });
     res.json(reports);
@@ -617,13 +791,14 @@ app.post('/api/address-reports', authenticateToken, async (req, res) => {
       data: {
         employeeId: req.user.id,
         employeeName: req.user.name,
-        message: message.trim()
+        message: message.trim(),
+        organizationId: req.user.organizationId
       }
     });
 
-    // Broadcast to SSE clients to notify admin in real-time
     broadcastEvent({
       type: 'ADDRESS_REPORT_CREATED',
+      organizationId: req.user.organizationId,
       report: newReport,
       message: `Nouveau signalement d'adresse par ${req.user.name}`
     });
@@ -637,13 +812,18 @@ app.post('/api/address-reports', authenticateToken, async (req, res) => {
 app.delete('/api/address-reports/:id', authenticateToken, requireRole('admin'), async (req, res) => {
   const { id } = req.params;
   try {
+    const report = await prisma.addressReport.findFirst({
+      where: { id, organizationId: req.user.organizationId }
+    });
+    if (!report) return res.status(404).json({ error: "Signalement introuvable." });
+
     await prisma.addressReport.delete({
       where: { id }
     });
     
-    // Broadcast event
     broadcastEvent({
       type: 'ADDRESS_REPORT_DELETED',
+      organizationId: req.user.organizationId,
       reportId: id
     });
 
@@ -655,5 +835,5 @@ app.delete('/api/address-reports/:id', authenticateToken, requireRole('admin'), 
 
 // Start Server
 app.listen(PORT, () => {
-  console.log(`Serveur API YA Consulting à l'écoute sur le port ${PORT}`);
+  console.log(`Serveur API Multi-Tenant à l'écoute sur le port ${PORT}`);
 });
