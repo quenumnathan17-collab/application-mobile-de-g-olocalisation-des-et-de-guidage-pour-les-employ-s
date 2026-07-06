@@ -511,7 +511,7 @@ export default function Login({ onLoginSuccess, apiUrl = '' }) {
         </Paper>
 
         <Typography variant="caption" sx={{ color: { xs: 'rgba(255,255,255,0.5)', md: '#8899b5' }, fontWeight: 500, mb: 3 }}>
-          © 2025 YA Consulting — Tous droits réservés
+          © {new Date().getFullYear()} YA Consulting — Tous droits réservés
         </Typography>
       </Box>
     </Box>
