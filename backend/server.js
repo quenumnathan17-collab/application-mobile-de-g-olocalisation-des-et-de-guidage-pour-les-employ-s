@@ -3,6 +3,7 @@ import cors from 'cors';
 import pkg from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import webpush from 'web-push';
 
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
@@ -10,6 +11,28 @@ const prisma = new PrismaClient();
 const app = express();
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'ya-consulting-super-secret-key-2026';
+
+// VAPID keys setup for Web Push
+let vapidKeys;
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+  vapidKeys = {
+    publicKey: process.env.VAPID_PUBLIC_KEY,
+    privateKey: process.env.VAPID_PRIVATE_KEY
+  };
+} else {
+  // Generate dynamically at startup if not provided in .env
+  vapidKeys = webpush.generateVAPIDKeys();
+  console.log("------------------------------------------------------------------");
+  console.log("Clés VAPID générées dynamiquement pour les notifications Web Push :");
+  console.log("Clé Publique : ", vapidKeys.publicKey);
+  console.log("------------------------------------------------------------------");
+}
+
+webpush.setVapidDetails(
+  'mailto:info@portail-terrain.ci',
+  vapidKeys.publicKey,
+  vapidKeys.privateKey
+);
 
 // SSE Clients
 let sseClients = [];
@@ -28,6 +51,42 @@ const AVATAR_PRESETS = [
   "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
   "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80"
 ];
+
+// Helper: send push notifications to a technician
+const sendPushNotification = async (employeeId, payload) => {
+  try {
+    const subscriptions = await prisma.pushSubscription.findMany({
+      where: { employeeId }
+    });
+
+    const payloadString = JSON.stringify(payload);
+
+    const promises = subscriptions.map(sub => {
+      const pushSubscription = {
+        endpoint: sub.endpoint,
+        keys: {
+          p256dh: sub.p256dh,
+          auth: sub.auth
+        }
+      };
+
+      return webpush.sendNotification(pushSubscription, payloadString)
+        .catch(async (err) => {
+          // Clean up expired subscriptions (410 Gone / 404 Not Found)
+          if (err.statusCode === 410 || err.statusCode === 404) {
+            console.log(`Suppression de l'abonnement push expiré [${sub.id}] pour le technicien ${employeeId}`);
+            await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+          } else {
+            console.error("Erreur lors de l'envoi de la notification push:", err);
+          }
+        });
+    });
+
+    await Promise.all(promises);
+  } catch (err) {
+    console.error("Erreur générale dans sendPushNotification:", err);
+  }
+};
 
 // --- API ROUTES ---
 
@@ -332,6 +391,54 @@ const requireRole = (role) => {
     next();
   };
 };
+
+// --- WEB PUSH SUBSCRIPTION ENDPOINTS ---
+
+app.get('/api/push/key', (req, res) => {
+  res.json({ publicKey: vapidKeys.publicKey });
+});
+
+app.post('/api/push/subscribe', authenticateToken, async (req, res) => {
+  const { subscription } = req.body;
+  if (!subscription || !subscription.endpoint || !subscription.keys || !subscription.keys.p256dh || !subscription.keys.auth) {
+    return res.status(400).json({ error: "Format d'abonnement push invalide." });
+  }
+
+  try {
+    await prisma.pushSubscription.upsert({
+      where: { endpoint: subscription.endpoint },
+      update: {
+        employeeId: req.user.id,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth
+      },
+      create: {
+        employeeId: req.user.id,
+        endpoint: subscription.endpoint,
+        p256dh: subscription.keys.p256dh,
+        auth: subscription.keys.auth
+      }
+    });
+
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/push/unsubscribe', authenticateToken, async (req, res) => {
+  const { endpoint } = req.body;
+  if (!endpoint) return res.status(400).json({ error: "Endpoint manquant." });
+
+  try {
+    await prisma.pushSubscription.deleteMany({
+      where: { endpoint, employeeId: req.user.id }
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // --- TENANT API OPERATIONS ---
 
@@ -728,6 +835,13 @@ app.post('/api/operations', authenticateToken, requireRole('admin'), async (req,
       message: `Nouvelle mission assignée pour le ${new Date(date).toLocaleDateString()}`
     });
 
+    // Send Real Web Push Notification
+    sendPushNotification(employeeId, {
+      title: "Nouvelle mission assignée",
+      body: `Mission: ${description} (prévue le ${new Date(date).toLocaleDateString()})`,
+      data: { url: '/?tab=list' }
+    });
+
     res.status(201).json(newOp);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -759,6 +873,13 @@ app.put('/api/operations/:id/status', authenticateToken, async (req, res) => {
       operationId: id,
       newStatus: status,
       message: `La mission ${id} est maintenant: ${status}`
+    });
+
+    // Send Real Web Push Notification to technician
+    sendPushNotification(updated.employeeId, {
+      title: "Statut de mission mis à jour",
+      body: `La mission ${id} a été mise à jour: ${status}`,
+      data: { url: '/?tab=list' }
     });
 
     res.json(updated);

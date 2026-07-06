@@ -42,6 +42,8 @@ model Employee {
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
+
+  pushSubscriptions PushSubscription[]
 }
 
 model Client {
@@ -83,4 +85,14 @@ model AddressReport {
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
+}
+
+model PushSubscription {
+  id         String   @id @default(uuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now())
 }
