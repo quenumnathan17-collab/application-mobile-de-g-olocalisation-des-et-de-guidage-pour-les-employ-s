@@ -501,17 +501,6 @@ export default function App() {
 
         {/* Right Side: Smartphone Simulator for Technicians */}
         <div style={{ display: effectiveLayoutMode === 'admin' ? 'none' : 'block', position: 'relative', height: '100%', overflow: 'hidden' }}>
-          {/* Simulated Toast Notification in phone */}
-          {activeNotification && activeEmployeeId && (
-            <div className="notif-toast" style={{ position: 'absolute', top: '70px', right: '40px', width: '300px', zIndex: 1000 }}>
-              <div style={{ fontSize: '18px' }}>●</div>
-              <div className="notif-content">
-                <div className="notif-title">{activeNotification.title}</div>
-                <div className="notif-body">{activeNotification.body}</div>
-              </div>
-            </div>
-          )}
-          
           <MobileSimulator 
             clients={clients}
             employees={employees}
@@ -529,6 +518,7 @@ export default function App() {
             portalLogout={handleLogout}
             toggleTheme={toggleTheme}
             setLayoutMode={setLayoutMode}
+            activeNotification={activeNotification}
           />
         </div>
       </main>

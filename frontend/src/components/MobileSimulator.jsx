@@ -25,7 +25,8 @@ export default function MobileSimulator({
   isMobileScreen = false,
   portalLogout,
   toggleTheme,
-  setLayoutMode
+  setLayoutMode,
+  activeNotification
 }) {
   const getArrivalTime = (durationMinutes) => {
     const now = new Date();
@@ -756,6 +757,16 @@ export default function MobileSimulator({
           {isOffline && (
             <div className="offline-banner">
               <WifiOff size={14} /> Mode Hors-ligne actif (Données en cache)
+            </div>
+          )}
+
+          {activeNotification && (
+            <div className="notif-toast" style={{ position: 'absolute', top: isOffline ? '42px' : '10px', left: '10px', right: '10px', zIndex: 1100 }}>
+              <div style={{ fontSize: '18px', color: '#818cf8', display: 'flex', alignItems: 'center' }}>●</div>
+              <div className="notif-content">
+                <div className="notif-title" style={{ color: 'white', fontWeight: 'bold' }}>{activeNotification.title}</div>
+                <div className="notif-body">{activeNotification.body}</div>
+              </div>
             </div>
           )}
 
