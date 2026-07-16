@@ -5,20 +5,32 @@ const timestamp = () => new Date().toISOString();
 
 const logger = {
   info: (...args) => {
-    console.log(`[${timestamp()}] [INFO]`, ...args);
+    const msg = args
+      .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+      .join(" ");
+    process.stdout.write(`[${timestamp()}] [INFO] ${msg}\n`);
   },
 
   warn: (...args) => {
-    console.warn(`[${timestamp()}] [WARN]`, ...args);
+    const msg = args
+      .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+      .join(" ");
+    process.stderr.write(`[${timestamp()}] [WARN] ${msg}\n`);
   },
 
   error: (...args) => {
-    console.error(`[${timestamp()}] [ERROR]`, ...args);
+    const msg = args
+      .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+      .join(" ");
+    process.stderr.write(`[${timestamp()}] [ERROR] ${msg}\n`);
   },
 
   debug: (...args) => {
     if (process.env.NODE_ENV !== "production") {
-      console.log(`[${timestamp()}] [DEBUG]`, ...args);
+      const msg = args
+        .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+        .join(" ");
+      process.stdout.write(`[${timestamp()}] [DEBUG] ${msg}\n`);
     }
   },
 };

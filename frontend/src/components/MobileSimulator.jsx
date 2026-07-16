@@ -151,7 +151,7 @@ export default function MobileSimulator({
   const [showCustomRelocation, setShowCustomRelocation] = useState(false);
   const [customRelocationText, setCustomRelocationText] = useState("");
   const [routePolyline, setRoutePolyline] = useState(null);
-  const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
+  const [routeInfo, setRouteInfo] = useState(null); // distance en km et duree en minutes
 
   // Real-Time Clock for simulated smartphone
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -376,7 +376,7 @@ export default function MobileSimulator({
 
     // Si l'utilisateur connecté est admin, on ne traque pas sa position comme si c'était celle du technicien
     if (currentUser && currentUser.role === "admin") {
-      console.log(
+      console.info(
         "Mode simulation admin actif, géolocalisation réelle du navigateur ignorée.",
       );
       return;

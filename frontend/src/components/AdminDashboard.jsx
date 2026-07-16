@@ -186,7 +186,7 @@ export default function AdminDashboard({
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newClientContactName, setNewClientContactName] = useState("");
   const [newClientNotes, setNewClientNotes] = useState("");
-  const [geocodingAlert, setGeocodingAlert] = useState(null); // { type: 'success'|'error', text: '' }
+  const [geocodingAlert, setGeocodingAlert] = useState(null); // structure: type et texte
   const [saveCompleted, setSaveCompleted] = useState(false);
   // Manual GPS override
   const [showManualGps, setShowManualGps] = useState(false);
@@ -989,7 +989,7 @@ export default function AdminDashboard({
         >
           <Tabs
             value={activeTab}
-            onChange={(e, val) => setActiveTab(val)}
+            onChange={(_e, val) => setActiveTab(val)}
             textColor="primary"
             indicatorColor="primary"
             variant="scrollable"

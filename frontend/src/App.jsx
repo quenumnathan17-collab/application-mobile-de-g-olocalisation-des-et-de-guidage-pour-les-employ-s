@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import AdminDashboard from "./components/AdminDashboard";
 import MobileSimulator from "./components/MobileSimulator";
 import Login from "./components/Login";
@@ -95,7 +95,7 @@ export default function App() {
 
   const subscribeToPushNotifications = async () => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      console.log(
+      console.info(
         "Les notifications Push ne sont pas supportées par ce navigateur.",
       );
       return;
@@ -109,7 +109,7 @@ export default function App() {
       const registration = await navigator.serviceWorker.ready;
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        console.log("Permission de notifications refusée.");
+        console.info("Permission de notifications refusée.");
         return;
       }
 
@@ -140,7 +140,7 @@ export default function App() {
         body: JSON.stringify({ subscription }),
       });
 
-      console.log("Abonnement aux notifications Push réussi !");
+      console.info("Abonnement aux notifications Push réussi !");
     } catch (err) {
       console.error(
         "Erreur lors de l'abonnement aux notifications Push :",
@@ -162,7 +162,7 @@ export default function App() {
         }).catch(() => {});
 
         await subscription.unsubscribe();
-        console.log("Désabonnement des notifications Push réussi.");
+        console.info("Désabonnement des notifications Push réussi.");
       }
     } catch (err) {
       console.error("Erreur lors du désabonnement Push:", err);
