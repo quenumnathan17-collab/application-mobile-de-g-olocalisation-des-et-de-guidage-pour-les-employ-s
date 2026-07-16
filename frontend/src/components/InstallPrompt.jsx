@@ -3,7 +3,7 @@
  * Apparaît automatiquement selon les règles du navigateur (Android/Chrome)
  * Sur iOS, affiche un guide manuel "Partager → Ajouter à l'écran d'accueil"
  */
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Download, X, Smartphone, Share } from "lucide-react";
 
 export default function InstallPrompt() {

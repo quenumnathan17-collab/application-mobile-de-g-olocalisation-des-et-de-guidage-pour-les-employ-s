@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import L from "leaflet";
 import "leaflet-routing-machine";
 import {
@@ -8,14 +8,10 @@ import {
   Navigation,
   Clock,
   WifiOff,
-  Search,
   Compass,
   ChevronRight,
   MapPin,
-  CheckCircle2,
-  Play,
   ExternalLink,
-  RefreshCw,
   Settings,
   User,
   Camera,
@@ -67,6 +63,60 @@ export default function MobileSimulator({
     });
   };
 
+  const geocodeAndRelocalize = async (addressInput) => {
+    if (!addressInput || !addressInput.trim()) return;
+
+    const queries = [
+      addressInput + ", Abidjan, Côte d'Ivoire",
+      addressInput + ", Côte d'Ivoire",
+      addressInput,
+    ];
+
+    const tryGeocode = async (index) => {
+      if (index >= queries.length) return null;
+      try {
+        const url =
+          `https://nominatim.openstreetmap.org/search?q=` +
+          `${encodeURIComponent(queries[index])}` +
+          `&countrycodes=ci&format=json&limit=1`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          return data[0];
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`Relocation geocode ${index} failed:`, err);
+      }
+      return tryGeocode(index + 1);
+    };
+
+    const foundData = await tryGeocode(0);
+
+    if (foundData) {
+      const lat = parseFloat(foundData.lat);
+      const lng = parseFloat(foundData.lon);
+      updateEmployeeGps(activeEmployeeId, { lat, lng });
+      setRoutePolyline(null);
+      setRouteInfo(null);
+      addNotification({
+        title: "Relocalisation réussie",
+        body:
+          `Positionné à : ${foundData.display_name.split(",")[0]} ` +
+          `(Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`,
+      });
+      setShowCustomRelocation(false);
+      setCustomRelocationText("");
+    } else {
+      addNotification({
+        title: "Lieu introuvable",
+        body:
+          "Impossible de situer ce lieu à Abidjan. " +
+          "Vérifiez l'orthographe.",
+      });
+    }
+  };
+
   const [mobileTab, setMobileTab] = useState("map"); // 'map', 'list', 'settings'
 
   // ── Profile / Settings state ───────────────────────────────────────────────
@@ -98,6 +148,8 @@ export default function MobileSimulator({
   const [showReportIssueModal, setShowReportIssueModal] = useState(false);
   const [reportText, setReportText] = useState("");
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showCustomRelocation, setShowCustomRelocation] = useState(false);
+  const [customRelocationText, setCustomRelocationText] = useState("");
   const [routePolyline, setRoutePolyline] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null); // { distance: km, duration: mins }
 
@@ -361,11 +413,12 @@ export default function MobileSimulator({
   // Calculate route
   const handleCalculateRoute = (op) => {
     if (isOffline) {
-      alert(
-        "Impossible de calculer un nouvel itinéraire en mode " +
-          "Hors-ligne. Affichage des coordonnées GPS du " +
-          "client en cache.",
-      );
+      addNotification({
+        title: "Mode Hors-ligne",
+        body:
+          "Calcul d'itinéraire impossible hors-ligne. Affichage des " +
+          "coordonnées en cache.",
+      });
       return;
     }
 
@@ -2579,69 +2632,7 @@ export default function MobileSimulator({
                                   if (!val) return;
 
                                   if (val === "CUSTOM") {
-                                    const addressInput = prompt(
-                                      "Entrez un nom de lieu ou de " +
-                                        "quartier à Abidjan\nExemple : " +
-                                        "Riviera 3, Yopougon Maroc, " +
-                                        "Plateau",
-                                    );
-                                    if (!addressInput) return;
-
-                                    (async () => {
-                                      const queries = [
-                                        addressInput +
-                                          ", Abidjan, Côte d'Ivoire",
-                                        addressInput + ", Côte d'Ivoire",
-                                        addressInput,
-                                      ];
-                                      let foundData = null;
-
-                                      for (const q of queries) {
-                                        try {
-                                          const url =
-                                            `https://nominatim.openstreetmap.org/search?q=` +
-                                            `${encodeURIComponent(q)}` +
-                                            `&countrycodes=ci&format=json&limit=1`;
-                                          const res = await fetch(url);
-                                          const data = await res.json();
-                                          if (data && data.length > 0) {
-                                            foundData = data[0];
-                                            break;
-                                          }
-                                        } catch (e) {
-                                          console.error(
-                                            "Relocation geocode attempt failed:",
-                                            q,
-                                            e,
-                                          );
-                                        }
-                                      }
-
-                                      if (foundData) {
-                                        const lat = parseFloat(foundData.lat);
-                                        const lng = parseFloat(foundData.lon);
-                                        updateEmployeeGps(activeEmployee.id, {
-                                          lat,
-                                          lng,
-                                        });
-                                        setRoutePolyline(null);
-                                        setRouteInfo(null);
-                                        addNotification({
-                                          title: "Relocalisation réussie",
-                                          body:
-                                            `Positionné à : ${foundData.display_name.split(",")[0]} ` +
-                                            `(Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`,
-                                        });
-                                      } else {
-                                        alert(
-                                          "Lieu introuvable à Abidjan. " +
-                                            "Essayez d'être plus précis " +
-                                            "(ex: Cocody Mermoz) ou " +
-                                            "d'utiliser un point d'intérêt " +
-                                            "connu.",
-                                        );
-                                      }
-                                    })();
+                                    setShowCustomRelocation(true);
                                     return;
                                   }
 
@@ -2681,6 +2672,60 @@ export default function MobileSimulator({
                                   Position personnalisée...
                                 </option>
                               </select>
+                              {showCustomRelocation && (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: "0.25rem",
+                                    marginTop: "0.5rem",
+                                    width: "100%",
+                                  }}
+                                >
+                                  <input
+                                    type="text"
+                                    placeholder=" Riviera 3, Abidjan..."
+                                    value={customRelocationText}
+                                    onChange={(e) =>
+                                      setCustomRelocationText(e.target.value)
+                                    }
+                                    style={{
+                                      flex: 1,
+                                      padding: "0.25rem",
+                                      fontSize: "0.75rem",
+                                      border: "1px solid #cbd5e1",
+                                    }}
+                                  />
+                                  <button
+                                    onClick={() =>
+                                      geocodeAndRelocalize(customRelocationText)
+                                    }
+                                    style={{
+                                      padding: "0.25rem 0.5rem",
+                                      fontSize: "0.75rem",
+                                      backgroundColor: "var(--primary)",
+                                      color: "white",
+                                      border: "none",
+                                    }}
+                                  >
+                                    OK
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setShowCustomRelocation(false);
+                                      setCustomRelocationText("");
+                                    }}
+                                    style={{
+                                      padding: "0.25rem 0.5rem",
+                                      fontSize: "0.75rem",
+                                      backgroundColor: "#e2e8f0",
+                                      color: "#475569",
+                                      border: "none",
+                                    }}
+                                  >
+                                    X
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -2882,41 +2927,7 @@ export default function MobileSimulator({
                   if (!val) return;
 
                   if (val === "CUSTOM") {
-                    const addressInput = prompt(
-                      "Entrez un nom de lieu ou de quartier à Abidjan\nExemple : Riviera 3, Yopougon Maroc, Plateau",
-                    );
-                    if (!addressInput) return;
-
-                    // Geocoding query to OpenStreetMap Nominatim
-                    const query = `${addressInput}, Abidjan, Côte d'Ivoire`;
-                    fetch(
-                      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`,
-                    )
-                      .then((res) => res.json())
-                      .then((data) => {
-                        if (data && data.length > 0) {
-                          const lat = parseFloat(data[0].lat);
-                          const lng = parseFloat(data[0].lon);
-
-                          updateEmployeeGps(activeEmployee.id, { lat, lng });
-                          setRoutePolyline(null);
-                          setRouteInfo(null);
-                          addNotification({
-                            title: "Relocalisation réussie",
-                            body:
-                              `Positionné à : ${data[0].display_name.split(",")[0]} ` +
-                              `(Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)})`,
-                          });
-                        } else {
-                          alert(
-                            "Lieu introuvable à Abidjan. Essayez d'être plus précis (ex: Cocody Mermoz).",
-                          );
-                        }
-                      })
-                      .catch((err) => {
-                        console.error("Geocoding error", err);
-                        alert("Erreur lors de la recherche de l'adresse.");
-                      });
+                    setShowCustomRelocation(true);
                     return;
                   }
 
@@ -2945,6 +2956,56 @@ export default function MobileSimulator({
                 <option value="5.3450,-4.0750">Yopougon (Siporex)</option>
                 <option value="CUSTOM"> Position personnalisée...</option>
               </select>
+              {showCustomRelocation && (
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "0.25rem",
+                    marginTop: "0.5rem",
+                    width: "100%",
+                  }}
+                >
+                  <input
+                    type="text"
+                    placeholder=" Riviera 3, Abidjan..."
+                    value={customRelocationText}
+                    onChange={(e) => setCustomRelocationText(e.target.value)}
+                    style={{
+                      flex: 1,
+                      padding: "0.25rem",
+                      fontSize: "0.75rem",
+                      border: "1px solid #cbd5e1",
+                    }}
+                  />
+                  <button
+                    onClick={() => geocodeAndRelocalize(customRelocationText)}
+                    style={{
+                      padding: "0.25rem 0.5rem",
+                      fontSize: "0.75rem",
+                      backgroundColor: "var(--primary)",
+                      color: "white",
+                      border: "none",
+                    }}
+                  >
+                    OK
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowCustomRelocation(false);
+                      setCustomRelocationText("");
+                    }}
+                    style={{
+                      padding: "0.25rem 0.5rem",
+                      fontSize: "0.75rem",
+                      backgroundColor: "#e2e8f0",
+                      color: "#475569",
+                      border: "none",
+                    }}
+                  >
+                    X
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -3194,11 +3255,15 @@ export default function MobileSimulator({
                         data.error || "Impossible d'envoyer le rapport.",
                       );
                     }
-                    alert(
-                      "Merci ! Votre signalement a été envoyé aux administrateurs pour correction.",
-                    );
+                    addNotification({
+                      title: "Signalement envoyé",
+                      body: "Merci ! Votre signalement a été envoyé aux administrateurs pour correction.",
+                    });
                   } catch (err) {
-                    alert("Erreur lors de l'envoi : " + err.message);
+                    addNotification({
+                      title: "Erreur lors de l'envoi",
+                      body: err.message,
+                    });
                   } finally {
                     setShowReportIssueModal(false);
                     setReportText("");

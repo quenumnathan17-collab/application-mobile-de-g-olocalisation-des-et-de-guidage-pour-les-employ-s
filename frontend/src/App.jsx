@@ -7,8 +7,6 @@ import InstallPrompt from "./components/InstallPrompt";
 import {
   Sun,
   Moon,
-  Bell,
-  Info,
   LayoutGrid,
   Monitor,
   Smartphone,

@@ -35,10 +35,10 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemAvatar,
   IconButton,
   Autocomplete,
   CircularProgress,
+  Snackbar,
 } from "@mui/material";
 import {
   Map as MapIcon,
@@ -46,14 +46,12 @@ import {
   Work as WorkIcon,
   Add as AddIcon,
   Search as SearchIcon,
-  LocationOn as LocationOnIcon,
   Archive as ArchiveIcon,
   Unarchive as UnarchiveIcon,
   CalendarToday as CalendarTodayIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   Error as ErrorIcon,
-  Lock as LockIcon,
   Business as BusinessIcon,
   Person as PersonIcon,
   Build as BuildIcon,
@@ -61,7 +59,6 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   Place as PlaceIcon,
-  OpenInNew as OpenInNewIcon,
   BarChart as BarChartIcon,
   PictureAsPdf as PictureAsPdfIcon,
   MyLocation as MyLocationIcon,
@@ -100,6 +97,21 @@ export default function AdminDashboard({
 }) {
   const [activeTab, setActiveTab] = useState(0); // 0: supervision, 1: clients, 2: operations, 3: rapports
   const [addressReports, setAddressReports] = useState([]);
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    severity: "info",
+  });
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    title: "",
+    message: "",
+    onConfirm: null,
+  });
+
+  const showAlert = (message, severity = "error") => {
+    setSnackbar({ open: true, message, severity });
+  };
 
   const fetchAddressReports = async () => {
     try {
@@ -122,27 +134,33 @@ export default function AdminDashboard({
     }
   }, [activeTab]);
 
-  const handleDeleteReport = async (reportId) => {
-    if (
-      !window.confirm(
+  const handleDeleteReport = (reportId) => {
+    setConfirmDialog({
+      open: true,
+      title: "Confirmer la résolution",
+      message:
         "Voulez-vous marquer ce signalement comme résolu ? Il sera définitivement supprimé.",
-      )
-    )
-      return;
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_URL}/api/address-reports/${reportId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        setAddressReports((prev) => prev.filter((r) => r.id !== reportId));
-      } else {
-        alert("Impossible de supprimer le signalement.");
-      }
-    } catch (err) {
-      alert("Erreur lors de la suppression : " + err.message);
-    }
+      onConfirm: async () => {
+        try {
+          const token = localStorage.getItem("token");
+          const res = await fetch(
+            `${API_URL}/api/address-reports/${reportId}`,
+            {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${token}` },
+            },
+          );
+          if (res.ok) {
+            setAddressReports((prev) => prev.filter((r) => r.id !== reportId));
+            showAlert("Signalement résolu avec succès.", "success");
+          } else {
+            showAlert("Impossible de supprimer le signalement.");
+          }
+        } catch (err) {
+          showAlert("Erreur lors de la suppression : " + err.message);
+        }
+      },
+    });
   };
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -264,7 +282,7 @@ export default function AdminDashboard({
       setNewEmpRole("employee");
       setNewEmpAvatar(AVATAR_PRESETS[0]);
     } catch (err) {
-      alert(err.message);
+      showAlert(err.message);
     }
   };
 
@@ -272,8 +290,9 @@ export default function AdminDashboard({
     const newStatus = emp.status === "active" ? "inactif" : "active";
     try {
       await updateEmployee({ ...emp, status: newStatus });
+      showAlert("Statut du collaborateur mis à jour.", "success");
     } catch (err) {
-      alert("Erreur lors de la modification du statut.");
+      showAlert("Erreur lors de la modification du statut.");
     }
   };
 
@@ -336,7 +355,7 @@ export default function AdminDashboard({
             }
           }, 300);
         } else {
-          alert(
+          showAlert(
             "Adresse introuvable en Côte d'Ivoire. Essayez d'être plus précis (ex: Cocody, Abidjan).",
           );
         }
@@ -449,11 +468,13 @@ export default function AdminDashboard({
       (commune || "Abidjan") + ", Côte d'Ivoire", // 3. Commune / neighborhood only
       clientName + ", " + (commune || "Abidjan"), // 4. Business name + commune
     ];
-    for (let i = 0; i < queries.length; i++) {
+
+    const tryGeocode = async (index) => {
+      if (index >= queries.length) return null;
       try {
         const url =
           `https://nominatim.openstreetmap.org/search?q=` +
-          `${encodeURIComponent(queries[i])}` +
+          `${encodeURIComponent(queries[index])}` +
           `&countrycodes=ci&format=json&limit=1`;
         const res = await fetch(url, {
           headers: { "Accept-Language": "fr" },
@@ -463,15 +484,18 @@ export default function AdminDashboard({
           return {
             lat: parseFloat(data[0].lat),
             lng: parseFloat(data[0].lon),
-            strategy: i, // 0=exact, 1=city, 2=commune, 3=name
+            strategy: index, // 0=exact, 1=city, 2=commune, 3=name
             displayName: data[0].display_name,
           };
         }
-      } catch (_) {
-        /* continue to next strategy */
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn(`Geocoding strategy ${index} failed:`, err);
       }
-    }
-    return null;
+      return tryGeocode(index + 1);
+    };
+
+    return tryGeocode(0);
   };
 
   // ── Address autocomplete (debounced 450ms) ──
@@ -685,7 +709,7 @@ export default function AdminDashboard({
   const handleAddOpSubmit = (e) => {
     e.preventDefault();
     if (!newOpClient || !newOpEmp || !newOpDate || !newOpDesc.trim()) {
-      alert("Veuillez remplir tous les champs");
+      showAlert("Veuillez remplir tous les champs");
       return;
     }
 
@@ -890,8 +914,8 @@ export default function AdminDashboard({
           ? `<p style="margin: 4px 0 0 0; color: #059669; font-weight: 600;"> ` +
             `En route/En cours chez : ` +
             `${
-              clients.find((c) => c.id === activeOps[0].clientId)
-                ?.name || "Inconnu"
+              clients.find((c) => c.id === activeOps[0].clientId)?.name ||
+              "Inconnu"
             }</p>`
           : '<p style="margin: 4px 0 0 0; color: #64748b; font-style: italic;">' +
             "Disponible (pas de mission en cours)</p>";
@@ -3000,7 +3024,7 @@ export default function AdminDashboard({
                             const file = e.target.files[0];
                             if (!file) return;
                             if (file.size > 2 * 1024 * 1024) {
-                              alert("Le logo ne doit pas dépasser 2 Mo.");
+                              showAlert("Le logo ne doit pas dépasser 2 Mo.");
                               return;
                             }
                             const reader = new FileReader();
@@ -3029,9 +3053,12 @@ export default function AdminDashboard({
                                   "organization",
                                   JSON.stringify(updatedOrg),
                                 );
-                                alert("Logo mis à jour avec succès !");
+                                showAlert(
+                                  "Logo mis à jour avec succès !",
+                                  "success",
+                                );
                               } catch (err) {
-                                alert(err.message);
+                                showAlert(err.message);
                               }
                             };
                             reader.readAsDataURL(file);
@@ -3077,8 +3104,9 @@ export default function AdminDashboard({
                       onClick={() => {
                         if (currentOrg?.inviteCode) {
                           navigator.clipboard.writeText(currentOrg.inviteCode);
-                          alert(
+                          showAlert(
                             "Code d'invitation copié dans le presse-papiers !",
+                            "success",
                           );
                         }
                       }}
@@ -3099,8 +3127,9 @@ export default function AdminDashboard({
                         navigator.clipboard.writeText(
                           currentOrg?.inviteCode || "",
                         );
-                        alert(
+                        showAlert(
                           "Code d'invitation copié dans le presse-papiers !",
+                          "success",
                         );
                       }}
                     >
@@ -4296,7 +4325,7 @@ export default function AdminDashboard({
                                   avatar: presetUrl,
                                 });
                               } catch (err) {
-                                alert(
+                                showAlert(
                                   "Erreur lors de la modification de la photo de profil.",
                                 );
                               }
@@ -4530,9 +4559,9 @@ export default function AdminDashboard({
               </Box>
 
               <Alert severity="info" sx={{ mt: 1 }}>
-                Le mot de passe par défaut sera généré automatiquement :{" "}
-                <b>password123</b>. Le collaborateur pourra le modifier
-                ultérieurement (fonctionnalité à venir).
+                Un mot de passe temporaire aléatoire sécurisé sera généré
+                automatiquement. Le collaborateur pourra le modifier lors de sa
+                première connexion.
               </Alert>
             </DialogContent>
             <DialogActions sx={{ p: 3, pt: 1 }}>
@@ -4544,6 +4573,50 @@ export default function AdminDashboard({
               </Button>
             </DialogActions>
           </form>
+        </Dialog>
+
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={4000}
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        >
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+
+        <Dialog
+          open={confirmDialog.open}
+          onClose={() => setConfirmDialog({ ...confirmDialog, open: false })}
+        >
+          <DialogTitle>{confirmDialog.title}</DialogTitle>
+          <DialogContent>
+            <Typography>{confirmDialog.message}</Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() =>
+                setConfirmDialog({ ...confirmDialog, open: false })
+              }
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={() => {
+                if (confirmDialog.onConfirm) confirmDialog.onConfirm();
+                setConfirmDialog({ ...confirmDialog, open: false });
+              }}
+              variant="contained"
+              color="primary"
+            >
+              Confirmer
+            </Button>
+          </DialogActions>
         </Dialog>
       </Box>
     </ThemeProvider>

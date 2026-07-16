@@ -4,10 +4,7 @@ import pkg from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import logger from "../utils/logger.js";
-import {
-  mapEmployeeResponse,
-  mapOrganizationResponse,
-} from "../utils/mappers.js";
+import { mapOrganizationResponse } from "../utils/mappers.js";
 import {
   AVATAR_PRESETS,
   BCRYPT_ROUNDS,
@@ -278,7 +275,7 @@ router.post("/api/register", async (req, res) => {
 });
 
 // ── Reset Password Simulation ────────────────────────────────────────────────
-router.post("/api/reset-password", async (req, res) => {
+router.post("/api/auth/reset-password", async (req, res) => {
   const { identifier } = req.body;
   if (!identifier) {
     return res.status(400).json({ error: "Identifiant requis." });
@@ -304,7 +301,7 @@ router.post("/api/reset-password", async (req, res) => {
         "Un lien de réinitialisation vous a été envoyé" + " par e-mail/SMS.",
     });
   } catch (err) {
-    logger.error("POST /api/reset-password error:", err);
+    logger.error("POST /api/auth/reset-password error:", err);
     res.status(500).json({ error: err.message });
   }
 });

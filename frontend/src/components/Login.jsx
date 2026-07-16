@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import {
   Box,
   Paper,
@@ -16,7 +16,6 @@ import {
   IconButton,
   Tab,
   Tabs,
-  Avatar,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { Eye, EyeOff } from "lucide-react";
@@ -287,7 +286,7 @@ function LoginForm({ onLoginSuccess, apiUrl = "" }) {
                 setResetLoading(true);
                 setResetErr("");
                 try {
-                  const res = await fetch(`${apiUrl}/api/reset-password`, {
+                  const res = await fetch(`${apiUrl}/api/auth/reset-password`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ identifier: resetId }),

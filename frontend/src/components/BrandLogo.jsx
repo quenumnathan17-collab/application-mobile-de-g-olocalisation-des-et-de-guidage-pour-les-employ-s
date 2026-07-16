@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function BrandLogo({
   width = 48,
   height = 48,
