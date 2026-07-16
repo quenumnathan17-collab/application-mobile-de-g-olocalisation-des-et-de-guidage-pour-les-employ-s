@@ -1,6 +1,6 @@
-import pkg from '@prisma/client';
+import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
-import bcrypt from 'bcryptjs';
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -16,7 +16,7 @@ const initialEmployees = [
     longitude: -4.0205, // Plateau, Abidjan
     workingHoursStart: "07:30",
     workingHoursEnd: "17:30",
-    avatar: "/koffi.jpg"
+    avatar: "/koffi.jpg",
   },
   {
     id: "emp_2",
@@ -29,7 +29,8 @@ const initialEmployees = [
     longitude: -3.9897, // Cocody St-Jean, Abidjan
     workingHoursStart: "08:00",
     workingHoursEnd: "18:00",
-    avatar: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80"
+    avatar:
+      "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=150&auto=format&fit=crop&q=80",
   },
   {
     id: "emp_admin",
@@ -42,8 +43,9 @@ const initialEmployees = [
     longitude: 0.0,
     workingHoursStart: "08:00",
     workingHoursEnd: "18:00",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80"
-  }
+    avatar:
+      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80",
+  },
 ];
 
 const initialClients = [
@@ -53,17 +55,17 @@ const initialClients = [
     type: "entreprise",
     address: "Boulevard de la République, Plateau, Abidjan",
     latitude: 5.3211,
-    longitude: -4.0180,
-    archived: false
+    longitude: -4.018,
+    archived: false,
   },
   {
     id: "client_2",
     name: "M. Bakary Bamba",
     type: "particulier",
     address: "Avenue 8, Rue 12, Zone 4, Marcory, Abidjan",
-    latitude: 5.3050,
+    latitude: 5.305,
     longitude: -3.9785,
-    archived: false
+    archived: false,
   },
   {
     id: "client_3",
@@ -71,8 +73,8 @@ const initialClients = [
     type: "entreprise",
     address: "Avenue Noguès, Plateau, Abidjan",
     latitude: 5.3405,
-    longitude: -4.0150,
-    archived: false
+    longitude: -4.015,
+    archived: false,
   },
   {
     id: "client_4",
@@ -80,18 +82,18 @@ const initialClients = [
     type: "particulier",
     address: "Cité CNPS, Angré 22e Arrondissement, Cocody, Abidjan",
     latitude: 5.3955,
-    longitude: -3.9710,
-    archived: false
+    longitude: -3.971,
+    archived: false,
   },
   {
     id: "client_5",
     name: "Orange Côte d'Ivoire",
     type: "entreprise",
     address: "Boulevard Valéry Giscard d'Estaing, Marcory, Abidjan",
-    latitude: 5.3150,
-    longitude: -3.9920,
-    archived: false
-  }
+    latitude: 5.315,
+    longitude: -3.992,
+    archived: false,
+  },
 ];
 
 const initialOperations = [
@@ -102,7 +104,7 @@ const initialOperations = [
     date: "2026-06-18",
     employeeId: "emp_1",
     status: "en cours",
-    createdAt: new Date("2026-06-17T10:00:00Z")
+    createdAt: new Date("2026-06-17T10:00:00Z"),
   },
   {
     id: "op_2",
@@ -111,26 +113,28 @@ const initialOperations = [
     date: "2026-06-18",
     employeeId: "emp_1",
     status: "planifiée",
-    createdAt: new Date("2026-06-17T11:30:00Z")
+    createdAt: new Date("2026-06-17T11:30:00Z"),
   },
   {
     id: "op_3",
     clientId: "client_3",
-    description: "Audit de sécurité réseau et mise à jour du firewall de la clinique",
+    description:
+      "Audit de sécurité réseau et mise à jour du firewall de la clinique",
     date: "2026-06-18",
     employeeId: "emp_2",
     status: "en cours",
-    createdAt: new Date("2026-06-17T14:15:00Z")
+    createdAt: new Date("2026-06-17T14:15:00Z"),
   },
   {
     id: "op_4",
     clientId: "client_4",
-    description: "Dépannage de la liaison sans fil et paramétrage du routeur WiFi",
+    description:
+      "Dépannage de la liaison sans fil et paramétrage du routeur WiFi",
     date: "2026-06-19",
     employeeId: "emp_2",
     status: "planifiée",
-    createdAt: new Date("2026-06-18T08:00:00Z")
-  }
+    createdAt: new Date("2026-06-18T08:00:00Z"),
+  },
 ];
 
 async function main() {
@@ -152,40 +156,40 @@ async function main() {
       phone: "+225 07 08 09 10 11",
       sector: "Sécurité & Réseaux",
       inviteCode: "invite_ya_consulting",
-      logo: ""
-    }
+      logo: "",
+    },
   });
 
-  const hashedPassword = await bcrypt.hash('password123', 10);
+  const hashedPassword = await bcrypt.hash("password123", 10);
 
   // Insertion des employés liés à l'organisation
   for (const emp of initialEmployees) {
-    await prisma.employee.create({ 
-      data: { 
-        ...emp, 
+    await prisma.employee.create({
+      data: {
+        ...emp,
         password: hashedPassword,
-        organizationId: org.id
-      } 
+        organizationId: org.id,
+      },
     });
   }
 
   // Insertion des clients liés à l'organisation
   for (const client of initialClients) {
-    await prisma.client.create({ 
-      data: { 
+    await prisma.client.create({
+      data: {
         ...client,
-        organizationId: org.id
-      } 
+        organizationId: org.id,
+      },
     });
   }
 
   // Insertion des opérations liées à l'organisation
   for (const op of initialOperations) {
-    await prisma.operation.create({ 
-      data: { 
+    await prisma.operation.create({
+      data: {
         ...op,
-        organizationId: org.id
-      } 
+        organizationId: org.id,
+      },
     });
   }
 

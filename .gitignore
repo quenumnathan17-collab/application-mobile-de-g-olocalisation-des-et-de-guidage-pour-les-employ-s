@@ -3,6 +3,7 @@ node_modules/
 dist/
 .env
 .env.local
+.env.production
 
 # Databases
 backend/prisma/dev.db
@@ -10,6 +11,14 @@ backend/prisma/dev.db-journal
 
 # IDE and temp files
 .gemini/
+.agents/
 .idea/
 .vscode/
 *.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.tsbuildinfo
