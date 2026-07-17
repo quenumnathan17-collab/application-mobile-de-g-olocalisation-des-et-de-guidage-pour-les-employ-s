@@ -217,7 +217,6 @@ export default function App() {
   }, [theme]);
 
   // Actions connecting to the backend
-  // Actions connecting to the backend
   const handleAddClient = async (clientData) => {
     return addClient(apiFetch, clientData, setClients);
   };
@@ -227,7 +226,13 @@ export default function App() {
   };
 
   const handleAddOperation = async (newOp) => {
-    return addOperation(apiFetch, newOp, setOperations, clients, triggerNotification);
+    return addOperation({
+      apiFetch,
+      newOp,
+      setOperations,
+      clients,
+      triggerNotification,
+    });
   };
 
   const handleAddEmployee = async (empData) => {

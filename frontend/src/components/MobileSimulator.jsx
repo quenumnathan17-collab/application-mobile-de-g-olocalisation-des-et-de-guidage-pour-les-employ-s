@@ -376,6 +376,7 @@ export default function MobileSimulator({
 
     // Si l'utilisateur connecté est admin, on ne traque pas sa position comme si c'était celle du technicien
     if (currentUser && currentUser.role === "admin") {
+      // eslint-disable-next-line no-console
       console.info(
         "Mode simulation admin actif, géolocalisation réelle du navigateur ignorée.",
       );

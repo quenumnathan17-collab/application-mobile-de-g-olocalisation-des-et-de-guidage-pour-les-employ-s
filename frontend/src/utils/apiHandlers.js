@@ -35,7 +35,13 @@ export const updateClient = async (apiFetch, updatedClient, setClients) => {
   }
 };
 
-export const addOperation = async (apiFetch, newOp, setOperations, clients, triggerNotification) => {
+export const addOperation = async ({
+  apiFetch,
+  newOp,
+  setOperations,
+  clients,
+  triggerNotification,
+}) => {
   try {
     const res = await apiFetch("/api/operations", {
       method: "POST",
