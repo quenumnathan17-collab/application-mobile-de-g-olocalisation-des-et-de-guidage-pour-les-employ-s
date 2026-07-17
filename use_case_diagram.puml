@@ -1,0 +1,66 @@
+@startuml
+left to right direction
+skinparam packageStyle rect
+
+actor Administrateur
+actor Employe
+actor "Service de géocodage\n(Nominatim / OpenStreetMap)" as Geocodage
+
+Administrateur --|> Employe
+
+rectangle "Système de géolocalisation YA Consulting" {
+  usecase "Générer un rapport PDF" as UC_PDF
+  usecase "Consulter les signalements d'adresse" as UC_Sig
+  usecase "Gérer les opérations" as UC_Ops
+  usecase "Superviser la carte en temps réel" as UC_MapReal
+  usecase "Gérer les employés" as UC_Emps
+  usecase "Gérer les clients" as UC_Clients
+  usecase "Se connecter" as UC_Connect
+
+  usecase "Modifier le statut d'une opération" as UC_ModOp
+  usecase "Créer une opération et assigner un employé" as UC_CreOp
+  usecase "Filtrer les opérations du jour" as UC_FilOp
+  usecase "Créer / Modifier / Désactiver un employé" as UC_CreEmp
+  usecase "Créer / Modifier / Archiver un client" as UC_CreCli
+
+  usecase "Consulter ses interventions" as UC_ConsInter
+  usecase "Consulter la carte de géolocalisation" as UC_ConsMap
+  usecase "Signaler une adresse incorrecte" as UC_SigAdr
+  usecase "Lancer la navigation externe\n(Google Maps / Waze)" as UC_NavExt
+  usecase "Calculer un itinéraire" as UC_CalcItin
+}
+
+Administrateur --> UC_PDF
+Administrateur --> UC_Sig
+Administrateur --> UC_Ops
+Administrateur --> UC_MapReal
+Administrateur --> UC_Emps
+Administrateur --> UC_Clients
+
+UC_Ops ..> UC_ModOp : <<include>>
+UC_Ops ..> UC_CreOp : <<include>>
+UC_Ops <.. UC_FilOp : <<extend>>
+UC_Emps ..> UC_CreEmp : <<include>>
+UC_Clients ..> UC_CreCli : <<include>>
+
+Employe --> UC_ConsInter
+Employe --> UC_ConsMap
+Employe --> UC_SigAdr
+Employe --> UC_NavExt
+Employe --> UC_CalcItin
+
+UC_NavExt <.. UC_CalcItin : <<extend>>
+UC_CalcItin --> Geocodage
+
+UC_PDF ..> UC_Connect : <<include>>
+UC_Sig ..> UC_Connect : <<include>>
+UC_Ops ..> UC_Connect : <<include>>
+UC_MapReal ..> UC_Connect : <<include>>
+UC_Emps ..> UC_Connect : <<include>>
+UC_Clients ..> UC_Connect : <<include>>
+UC_ConsInter ..> UC_Connect : <<include>>
+UC_ConsMap ..> UC_Connect : <<include>>
+UC_SigAdr ..> UC_Connect : <<include>>
+UC_CalcItin ..> UC_Connect : <<include>>
+
+@endum
