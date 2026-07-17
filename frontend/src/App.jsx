@@ -5,6 +5,20 @@ import Login from "./components/Login";
 import BrandLogo from "./components/BrandLogo";
 import InstallPrompt from "./components/InstallPrompt";
 import {
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+} from "./utils/pushSubscription";
+import {
+  addClient,
+  updateClient,
+  addOperation,
+  addEmployee,
+  updateEmployee,
+  deleteEmployee,
+  updateOperationStatus,
+  updateEmployeeGps,
+} from "./utils/apiHandlers";
+import {
   Sun,
   Moon,
   LayoutGrid,
@@ -59,7 +73,7 @@ export default function App() {
   });
 
   const handleLogout = () => {
-    unsubscribeFromPushNotifications().catch(() => {});
+    unsubscribeFromPushNotifications(apiFetch).catch(() => {});
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("organization");
@@ -93,88 +107,12 @@ export default function App() {
     return res;
   };
 
-  const subscribeToPushNotifications = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-      console.info(
-        "Les notifications Push ne sont pas supportées par ce navigateur.",
-      );
-      return;
-    }
-
-    try {
-      const keyRes = await apiFetch("/api/push/key");
-      const { publicKey } = await keyRes.json();
-      if (!publicKey) return;
-
-      const registration = await navigator.serviceWorker.ready;
-      const permission = await Notification.requestPermission();
-      if (permission !== "granted") {
-        console.info("Permission de notifications refusée.");
-        return;
-      }
-
-      const urlBase64ToUint8Array = (base64String) => {
-        const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-        const base64 = (base64String + padding)
-          .replace(/-/g, "+")
-          .replace(/_/g, "/");
-        const rawData = window.atob(base64);
-        const outputArray = new Uint8Array(rawData.length);
-        for (let i = 0; i < rawData.length; ++i) {
-          outputArray[i] = rawData.charCodeAt(i);
-        }
-        return outputArray;
-      };
-
-      const subscribeOptions = {
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey),
-      };
-
-      const subscription =
-        await registration.pushManager.subscribe(subscribeOptions);
-
-      await apiFetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subscription }),
-      });
-
-      console.info("Abonnement aux notifications Push réussi !");
-    } catch (err) {
-      console.error(
-        "Erreur lors de l'abonnement aux notifications Push :",
-        err,
-      );
-    }
-  };
-
-  const unsubscribeFromPushNotifications = async () => {
-    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      const subscription = await registration.pushManager.getSubscription();
-      if (subscription) {
-        await apiFetch("/api/push/unsubscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ endpoint: subscription.endpoint }),
-        }).catch(() => {});
-
-        await subscription.unsubscribe();
-        console.info("Désabonnement des notifications Push réussi.");
-      }
-    } catch (err) {
-      console.error("Erreur lors du désabonnement Push:", err);
-    }
-  };
-
   // Trigger push subscription on startup / login
   useEffect(() => {
     if (currentUser) {
       // Small timeout to let PWA service worker fully register first
       const t = setTimeout(() => {
-        subscribeToPushNotifications();
+        subscribeToPushNotifications(apiFetch);
       }, 2000);
       return () => clearTimeout(t);
     }
@@ -279,137 +217,37 @@ export default function App() {
   }, [theme]);
 
   // Actions connecting to the backend
-  const addClient = async (clientData) => {
-    const res = await apiFetch("/api/clients", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(clientData),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Erreur lors du géocodage du client.");
-    }
-
-    const savedClient = await res.json();
-    setClients((prev) => [...prev, savedClient]);
-    return savedClient;
+  // Actions connecting to the backend
+  const handleAddClient = async (clientData) => {
+    return addClient(apiFetch, clientData, setClients);
   };
 
-  const updateClient = async (updatedClient) => {
-    try {
-      const res = await apiFetch(`/api/clients/${updatedClient.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updatedClient),
-      });
-      const saved = await res.json();
-      setClients((prev) => prev.map((c) => (c.id === saved.id ? saved : c)));
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour du client :", err);
-    }
+  const handleUpdateClient = async (updatedClient) => {
+    return updateClient(apiFetch, updatedClient, setClients);
   };
 
-  const addOperation = async (newOp) => {
-    try {
-      const res = await apiFetch("/api/operations", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newOp),
-      });
-
-      const savedOp = await res.json();
-      setOperations((prev) => [...prev, savedOp]);
-
-      // Auto-notify the assigned employee if connected
-      if (savedOp.employeeId) {
-        const clientName =
-          clients.find((c) => c.id === savedOp.clientId)?.name || "Client";
-        triggerNotification({
-          title: "Nouvelle mission assignée",
-          body: `Nouvelle intervention planifiée chez ` + `${clientName}.`,
-        });
-      }
-    } catch (err) {
-      console.error("Erreur lors de la création de l'opération :", err);
-    }
+  const handleAddOperation = async (newOp) => {
+    return addOperation(apiFetch, newOp, setOperations, clients, triggerNotification);
   };
 
-  const addEmployee = async (empData) => {
-    const res = await apiFetch("/api/employees", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(empData),
-    });
-
-    if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error || "Erreur lors de la création de l'employé.");
-    }
-
-    const savedEmp = await res.json();
-    setEmployees((prev) => [...prev, savedEmp]);
-    return savedEmp;
+  const handleAddEmployee = async (empData) => {
+    return addEmployee(apiFetch, empData, setEmployees);
   };
 
-  const updateEmployee = async (empData) => {
-    try {
-      const res = await apiFetch(`/api/employees/${empData.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(empData),
-      });
-      const saved = await res.json();
-      setEmployees((prev) => prev.map((e) => (e.id === saved.id ? saved : e)));
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour de l'employé :", err);
-    }
+  const handleUpdateEmployee = async (empData) => {
+    return updateEmployee(apiFetch, empData, setEmployees);
   };
 
-  const deleteEmployee = async (empId) => {
-    try {
-      await apiFetch(`/api/employees/${empId}`, {
-        method: "DELETE",
-      });
-      setEmployees((prev) => prev.filter((e) => e.id !== empId));
-    } catch (err) {
-      console.error("Erreur lors de la suppression de l'employé :", err);
-    }
+  const handleDeleteEmployee = async (empId) => {
+    return deleteEmployee(apiFetch, empId, setEmployees);
   };
 
-  const updateOperationStatus = async (opId, status) => {
-    try {
-      const res = await apiFetch(`/api/operations/${opId}/status`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
-      });
-
-      const saved = await res.json();
-      setOperations((prev) => prev.map((o) => (o.id === opId ? saved : o)));
-    } catch (err) {
-      console.error(
-        "Erreur lors de la mise à jour du statut d'intervention :",
-        err,
-      );
-    }
+  const handleUpdateOperationStatus = async (opId, status) => {
+    return updateOperationStatus(apiFetch, opId, status, setOperations);
   };
 
-  const updateEmployeeGps = async (empId, gps) => {
-    // Optimistic state update for super smooth map animations on frontend
-    setEmployees((prev) =>
-      prev.map((e) => (e.id === empId ? { ...e, gps } : e)),
-    );
-
-    try {
-      await apiFetch(`/api/employees/${empId}/gps`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(gps),
-      });
-    } catch (err) {
-      console.error("Erreur lors de la mise à jour de la position GPS :", err);
-    }
+  const handleUpdateEmployeeGps = async (empId, gps) => {
+    return updateEmployeeGps(apiFetch, empId, gps, setEmployees);
   };
 
   // Trigger push notification inside Mobile Simulator
@@ -549,13 +387,13 @@ export default function App() {
             clients={clients}
             employees={employees}
             operations={operations}
-            addClient={addClient}
-            updateClient={updateClient}
-            addOperation={addOperation}
-            updateOperationStatus={updateOperationStatus}
-            addEmployee={addEmployee}
-            updateEmployee={updateEmployee}
-            deleteEmployee={deleteEmployee}
+            addClient={handleAddClient}
+            updateClient={handleUpdateClient}
+            addOperation={handleAddOperation}
+            updateOperationStatus={handleUpdateOperationStatus}
+            addEmployee={handleAddEmployee}
+            updateEmployee={handleUpdateEmployee}
+            deleteEmployee={handleDeleteEmployee}
             layoutMode={effectiveLayoutMode}
             currentOrg={currentOrg}
             setCurrentOrg={setCurrentOrg}
@@ -580,8 +418,8 @@ export default function App() {
               (currentUser?.role === "employee" ? currentUser.id : null)
             }
             setActiveEmployeeId={setActiveEmployeeId}
-            updateOperationStatus={updateOperationStatus}
-            updateEmployeeGps={updateEmployeeGps}
+            updateOperationStatus={handleUpdateOperationStatus}
+            updateEmployeeGps={handleUpdateEmployeeGps}
             addNotification={triggerNotification}
             onProfileUpdated={onProfileUpdated}
             layoutMode={effectiveLayoutMode}
