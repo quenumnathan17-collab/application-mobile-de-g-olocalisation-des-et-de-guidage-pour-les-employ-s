@@ -3096,44 +3096,90 @@ export default function AdminDashboard({
                     entreprise.
                   </Typography>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <TextField
-                      size="small"
-                      value={currentOrg?.inviteCode || ""}
-                      slotProps={{ input: { readOnly: true } }}
-                      onClick={() => {
-                        if (currentOrg?.inviteCode) {
-                          navigator.clipboard.writeText(currentOrg.inviteCode);
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <TextField
+                        size="small"
+                        value={currentOrg?.inviteCode || ""}
+                        slotProps={{ input: { readOnly: true } }}
+                        onClick={() => {
+                          if (currentOrg?.inviteCode) {
+                            navigator.clipboard.writeText(
+                              currentOrg.inviteCode,
+                            );
+                            showAlert(
+                              "Code d'invitation copié dans le presse-papiers !",
+                              "success",
+                            );
+                          }
+                        }}
+                        sx={{
+                          flexGrow: 1,
+                          "& .MuiOutlinedInput-root": { borderRadius: 0 },
+                          "& input": {
+                            cursor: "pointer",
+                            fontWeight: "bold",
+                            letterSpacing: "1px",
+                          },
+                        }}
+                      />
+                      <Button
+                        variant="contained"
+                        sx={{
+                          borderRadius: 0,
+                          textTransform: "none",
+                          height: 40,
+                        }}
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            currentOrg?.inviteCode || "",
+                          );
                           showAlert(
                             "Code d'invitation copié dans le presse-papiers !",
                             "success",
                           );
-                        }
-                      }}
-                      sx={{
-                        flexGrow: 1,
-                        "& .MuiOutlinedInput-root": { borderRadius: 0 },
-                        "& input": { cursor: "pointer" },
-                      }}
-                    />
+                        }}
+                      >
+                        Copier Code
+                      </Button>
+                    </Box>
+
                     <Button
-                      variant="contained"
+                      variant="outlined"
+                      color="primary"
                       sx={{
                         borderRadius: 0,
                         textTransform: "none",
-                        height: 40,
+                        width: "100%",
                       }}
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          currentOrg?.inviteCode || "",
-                        );
-                        showAlert(
-                          "Code d'invitation copié dans le presse-papiers !",
-                          "success",
-                        );
+                      onClick={async () => {
+                        const inviteLink = `${window.location.origin}${window.location.pathname}?invite=${currentOrg?.inviteCode || ""}`;
+                        if (navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: "Invitation YA Consulting",
+                              text: `Rejoignez notre organisation sur Portail Terrain avec le code d'invitation : ${currentOrg?.inviteCode}`,
+                              url: inviteLink,
+                            });
+                          } catch (err) {
+                            // En cas d'annulation ou d'erreur
+                          }
+                        } else {
+                          navigator.clipboard.writeText(inviteLink);
+                          showAlert(
+                            "Lien d'inscription direct copié dans le presse-papiers !",
+                            "success",
+                          );
+                        }
                       }}
                     >
-                      Copier
+                      Partager le lien d'inscription
                     </Button>
                   </Box>
                 </Box>

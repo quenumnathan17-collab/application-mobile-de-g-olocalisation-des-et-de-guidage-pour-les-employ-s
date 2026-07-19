@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -315,14 +315,18 @@ function LoginForm({ onLoginSuccess, apiUrl = "" }) {
 }
 
 // ── REGISTER FORM ─────────────────────────────────────────────────────────────
-function RegisterForm({ onSwitchToLogin, apiUrl = "" }) {
+function RegisterForm({
+  onSwitchToLogin,
+  apiUrl = "",
+  initialInviteCode = "",
+}) {
   const [form, setForm] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
     confirmPassword: "",
-    inviteCode: "",
+    inviteCode: initialInviteCode,
   });
   const [avatar, setAvatar] = useState(null); // base64 data URL
   const [loading, setLoading] = useState(false);
@@ -839,6 +843,14 @@ function RegisterCompanyForm({ onSwitchToLogin, onLoginSuccess, apiUrl = "" }) {
 export default function Login({ onLoginSuccess, apiUrl = "" }) {
   const [tab, setTab] = useState(0); // 0 = connexion, 1 = inscription technicien, 2 = inscription entreprise
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const invite = params.get("invite") || params.get("code");
+    if (invite) {
+      setTab(1);
+    }
+  }, []);
+
   return (
     <ThemeProvider theme={loginTheme}>
       <Box
@@ -1186,6 +1198,11 @@ export default function Login({ onLoginSuccess, apiUrl = "" }) {
                 <RegisterForm
                   onSwitchToLogin={() => setTab(0)}
                   apiUrl={apiUrl}
+                  initialInviteCode={
+                    new URLSearchParams(window.location.search).get("invite") ||
+                    new URLSearchParams(window.location.search).get("code") ||
+                    ""
+                  }
                 />
               )}
             </Box>
