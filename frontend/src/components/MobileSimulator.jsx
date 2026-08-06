@@ -1401,409 +1401,263 @@ export default function MobileSimulator({
                           top: 130,
                           right: 12,
                           zIndex: 1000,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
                         }}
                       >
+                        {/* Recenter on my position */}
                         <button
                           onClick={handleCenterMap}
                           className="mobile-floating-btn"
-                          style={{
-                            color: "var(--primary)",
-                            width: "38px",
-                            height: "38px",
-                          }}
                           title="Centrer sur ma position"
                         >
                           <Navigation
-                            size={16}
+                            size={17}
                             style={{
                               transform: "rotate(45deg)",
                               fill: "currentColor",
                             }}
                           />
                         </button>
+
+                        {/* Zoom in */}
+                        <button
+                          className="mobile-floating-btn"
+                          style={{ color: "#0f172a", fontSize: "1.2rem", fontWeight: 700 }}
+                          title="Zoom +"
+                          onClick={() => mapInstance.current?.zoomIn()}
+                        >
+                          +
+                        </button>
+
+                        {/* Zoom out */}
+                        <button
+                          className="mobile-floating-btn"
+                          style={{ color: "#0f172a", fontSize: "1.4rem", fontWeight: 700 }}
+                          title="Zoom −"
+                          onClick={() => mapInstance.current?.zoomOut()}
+                        >
+                          −
+                        </button>
                       </div>
 
                       {/* Bottom sheet for operation detail */}
-                      {selectedOp && (
-                        <div
-                          className={
-                            `mobile-bottom-sheet ` +
-                            `${selectedOp ? "open" : ""} ` +
-                            `${sheetExpanded ? "expanded" : ""}`
-                          }
-                        >
+                      {selectedOp && (() => {
+                        const client = clients.find(c => c.id === selectedOp.clientId);
+                        // Simulated photos from generic Abidjan business photos
+                        const carouselImages = [
+                          "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=300&auto=format&fit=crop&q=80",
+                          "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&auto=format&fit=crop&q=80",
+                          "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=300&auto=format&fit=crop&q=80",
+                        ];
+
+                        return (
                           <div
-                            className="sheet-drag-handle"
-                            onClick={() => setSheetExpanded(!sheetExpanded)}
-                            style={{ cursor: "pointer" }}
-                            title={sheetExpanded ? "Réduire" : "Dérouler"}
-                          ></div>
-                          <div
-                            className="sheet-scrollable-content"
-                            style={{
-                              overflowY: "auto",
-                              flex: 1,
-                              marginBottom: "0.75rem",
-                              paddingRight: "4px",
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: "0.75rem",
-                            }}
+                            className={
+                              `mobile-bottom-sheet ` +
+                              `${selectedOp ? "open" : ""} ` +
+                              `${sheetExpanded ? "expanded" : ""}`
+                            }
                           >
+                            {/* Drag Handle */}
                             <div
-                              className="sheet-header"
-                              style={{ marginBottom: 0 }}
+                              className="sheet-drag-handle"
+                              onClick={() => setSheetExpanded(!sheetExpanded)}
+                              title={sheetExpanded ? "Réduire" : "Dérouler"}
+                            ></div>
+
+                            {/* Scrollable Content */}
+                            <div
+                              style={{
+                                overflowY: "auto",
+                                flex: 1,
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: "0.75rem",
+                                paddingRight: "2px",
+                              }}
                             >
-                              <div className="sheet-client-name">
-                                {clients.find(
-                                  (c) => c.id === selectedOp.clientId,
-                                )?.name || "Client"}
-                              </div>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: "0.5rem",
-                                }}
-                              >
-                                <span
-                                  className={`badge badge-${selectedOp.status}`}
-                                >
-                                  {selectedOp.status}
-                                </span>
+                              {/* Title + Close */}
+                              <div className="sheet-header">
+                                <div style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                                  <div className="sheet-client-name">
+                                    {client?.name || "Client"}
+                                  </div>
+                                  {/* Sous-titre: type + statut + horaires simulés */}
+                                  <div style={{ display: "flex", alignItems: "center", gap: "0.4rem", flexWrap: "wrap" }}>
+                                    <span
+                                      className={`badge badge-${selectedOp.status}`}
+                                      style={{ fontSize: "0.7rem" }}
+                                    >
+                                      {selectedOp.status}
+                                    </span>
+                                    <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                                      {client?.type === "entreprise" ? "🏢 Entreprise" : "👤 Particulier"}
+                                    </span>
+                                    <span style={{ fontSize: "0.8rem", color: "#16a34a", fontWeight: 600 }}>
+                                      · 08:00 – 18:00
+                                    </span>
+                                  </div>
+                                </div>
                                 <button
+                                  className="sheet-close-btn"
                                   onClick={() => {
                                     setSelectedOp(null);
                                     setSheetExpanded(false);
                                   }}
-                                  style={{
-                                    background: "none",
-                                    border: "none",
-                                    color: "#94a3b8",
-                                    cursor: "pointer",
-                                    padding: "0.2rem",
-                                    display: "flex",
-                                    alignItems: "center",
-                                  }}
                                   title="Fermer"
                                 >
-                                  <X size={18} />
+                                  <X size={16} />
                                 </button>
                               </div>
-                            </div>
-                            <div
-                              className="sheet-address"
-                              style={{ marginBottom: 0 }}
-                            >
-                              <MapPin size={12} />
-                              {clients.find((c) => c.id === selectedOp.clientId)
-                                ?.address || ""}
-                            </div>
 
-                            {/* Infos client additionnelles pour le technicien terrain */}
-                            {(() => {
-                              const client = clients.find(
-                                (c) => c.id === selectedOp.clientId,
-                              );
-                              if (!client) return null;
-                              return (
+                              {/* Address */}
+                              <div className="sheet-address">
+                                <MapPin size={13} style={{ flexShrink: 0, color: "#ef4444" }} />
+                                <span>{client?.address || ""}</span>
+                              </div>
+
+                              {/* Description de la mission */}
+                              <div
+                                className="sheet-job-desc"
+                                style={{ marginBottom: 0 }}
+                              >
+                                {selectedOp.description}
+                              </div>
+
+                              {/* Route Info Card */}
+                              {routeInfo && (
                                 <div
                                   style={{
                                     display: "flex",
-                                    flexDirection: "column",
-                                    gap: "0.4rem",
-                                    background: "var(--bg-app)",
-                                    padding: "0.75rem",
-                                    borderRadius: "0px",
-                                    border: "1px solid var(--border-color)",
-                                    fontSize: "0.8rem",
+                                    gap: "0.75rem",
+                                    padding: "0.85rem",
+                                    borderRadius: "14px",
+                                    background: "linear-gradient(135deg, #f0f9ff, #e0f2fe)",
+                                    border: "1px solid #bae6fd",
                                   }}
                                 >
+                                  <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                                    <span style={{ fontSize: "0.7rem", color: "#0891b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Distance</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0c4a6e" }}>{routeInfo.distance} km</span>
+                                  </div>
+                                  <div style={{ width: "1px", background: "#bae6fd" }}></div>
+                                  <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                                    <span style={{ fontSize: "0.7rem", color: "#0891b2", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Durée</span>
+                                    <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "#0c4a6e" }}>{routeInfo.duration} min</span>
+                                  </div>
+                                  <div style={{ width: "1px", background: "#bae6fd" }}></div>
+                                  <div style={{ display: "flex", flexDirection: "column", flex: 1.4 }}>
+                                    <span style={{ fontSize: "0.7rem", color: "#16a34a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Arrivée</span>
+                                    <span style={{ fontSize: "1rem", fontWeight: 800, color: "#16a34a" }}>{getArrivalTime(routeInfo.duration)}</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Contact info */}
+                              {(client?.contactName || client?.phone) && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "0.65rem", background: "var(--bg-app)", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
                                   {client.contactName && (
-                                    <div style={{ color: "var(--text-main)" }}>
-                                      Contact :{" "}
-                                      <strong>{client.contactName}</strong>
-                                    </div>
+                                    <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                                      👤 <strong style={{ color: "var(--text-main)" }}>{client.contactName}</strong>
+                                    </span>
                                   )}
                                   {client.phone && (
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "0.35rem",
-                                      }}
-                                    >
-                                      Tél :{" "}
-                                      <a
-                                        href={`tel:${client.phone}`}
-                                        style={{
-                                          color: "#3b5edb",
-                                          textDecoration: "none",
-                                          fontWeight: "bold",
-                                          backgroundColor: "#e0e7ff",
-                                          padding: "0.1rem 0.5rem",
-                                          borderRadius: "0px",
-                                          display: "inline-flex",
-                                          alignItems: "center",
-                                          gap: "0.2rem",
-                                        }}
-                                      >
-                                        {client.phone}
-                                      </a>
-                                    </div>
-                                  )}
-                                  {client.notes && (
-                                    <div
-                                      style={{
-                                        marginTop: "0.25rem",
-                                        paddingTop: "0.4rem",
-                                        borderTop:
-                                          "1px dashed var(--border-color)",
-                                        color: "var(--text-muted)",
-                                        fontSize: "0.75rem",
-                                        fontStyle: "italic",
-                                        lineHeight: 1.3,
-                                      }}
-                                    >
-                                      <strong>Guidage :</strong> {client.notes}
-                                    </div>
+                                    <a href={`tel:${client.phone}`} style={{ fontSize: "0.82rem", color: "#3b5edb", fontWeight: 600, textDecoration: "none", display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                                      📞 {client.phone}
+                                    </a>
                                   )}
                                 </div>
-                              );
-                            })()}
-                            <div
-                              className="sheet-job-desc"
-                              style={{ marginBottom: 0 }}
-                            >
-                              {selectedOp.description}
-                            </div>
-
-                            {routeInfo && (
-                              <div
-                                className="sheet-route-info"
-                                style={{
-                                  display: "flex",
-                                  flexDirection: "column",
-                                  gap: "0.625rem",
-                                  width: "100%",
-                                  border: "1px dashed var(--border-color)",
-                                  borderRadius: "0px",
-                                  padding: "0.85rem",
-                                  backgroundColor: "var(--bg-app)",
-                                  marginBottom: 0,
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    width: "100%",
-                                  }}
-                                >
-                                  <div className="sheet-route-info-item">
-                                    <Compass
-                                      size={14}
-                                      style={{ color: "var(--primary)" }}
-                                    />
-                                    <span
-                                      style={{
-                                        fontSize: "0.8rem",
-                                        color: "var(--text-muted)",
-                                      }}
-                                    >
-                                      Distance :{" "}
-                                      <strong
-                                        style={{ color: "var(--text-main)" }}
-                                      >
-                                        {routeInfo.distance} km
-                                      </strong>
-                                    </span>
-                                  </div>
-                                  <div className="sheet-route-info-item">
-                                    <Clock
-                                      size={14}
-                                      style={{ color: "var(--primary)" }}
-                                    />
-                                    <span
-                                      style={{
-                                        fontSize: "0.8rem",
-                                        color: "var(--text-muted)",
-                                      }}
-                                    >
-                                      Temps restant :{" "}
-                                      <strong
-                                        style={{ color: "var(--text-main)" }}
-                                      >
-                                        {routeInfo.duration} min
-                                      </strong>
-                                    </span>
-                                  </div>
-                                </div>
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                    width: "100%",
-                                    borderTop: "1px solid var(--border-color)",
-                                    paddingTop: "0.625rem",
-                                  }}
-                                >
-                                  <div className="sheet-route-info-item">
-                                    <span
-                                      style={{
-                                        marginRight: "6px",
-                                        fontSize: "1rem",
-                                      }}
-                                    ></span>
-                                    <span
-                                      style={{
-                                        fontSize: "0.8rem",
-                                        color: "var(--text-muted)",
-                                      }}
-                                    >
-                                      Arrivée estimée :{" "}
-                                      <strong
-                                        style={{
-                                          color: "#10b981",
-                                          fontSize: "0.875rem",
-                                        }}
-                                      >
-                                        {getArrivalTime(routeInfo.duration)}
-                                      </strong>
-                                    </span>
-                                  </div>
-                                  <div className="sheet-route-info-item">
-                                    <span
-                                      style={{
-                                        fontSize: "0.75rem",
-                                        color: "#10b981",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "0.35rem",
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      <span
-                                        style={{
-                                          width: "8px",
-                                          height: "8px",
-                                          borderRadius: "50%",
-                                          backgroundColor: "#10b981",
-                                          display: "inline-block",
-                                          boxShadow: "0 0 8px #10b981",
-                                        }}
-                                      ></span>
-                                      Trafic fluide
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          <div className="sheet-actions">
-                            {selectedOp.status === "planifiée" && (
-                              <button
-                                className="btn btn-primary"
-                                style={{ flex: 1, padding: "0.5rem" }}
-                                onClick={() =>
-                                  handleStatusChange(selectedOp.id, "en cours")
-                                }
-                              >
-                                Démarrer la mission
-                              </button>
-                            )}
-                            {selectedOp.status === "en cours" && (
-                              <>
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{
-                                    flex: 1,
-                                    padding: "0.5rem",
-                                    backgroundColor: "#e2e8f0",
-                                    color: "#0f172a",
-                                  }}
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      selectedOp.id,
-                                      "planifiée",
-                                    )
-                                  }
-                                >
-                                  En pause
-                                </button>
-                                <button
-                                  className="btn"
-                                  style={{
-                                    flex: 1.2,
-                                    padding: "0.5rem",
-                                    backgroundColor: "var(--success)",
-                                    color: "white",
-                                  }}
-                                  onClick={() =>
-                                    handleStatusChange(
-                                      selectedOp.id,
-                                      "terminée",
-                                    )
-                                  }
-                                >
-                                  Terminer
-                                </button>
-                              </>
-                            )}
-                            {!routePolyline &&
-                              selectedOp.status !== "terminée" && (
-                                <button
-                                  className="btn btn-secondary"
-                                  style={{ padding: "0.5rem" }}
-                                  onClick={() =>
-                                    handleCalculateRoute(selectedOp)
-                                  }
-                                >
-                                  Itinéraire
-                                </button>
                               )}
-                            {routePolyline && (
-                              <button
-                                className="btn btn-primary"
-                                style={{
-                                  padding: "0.5rem",
-                                  backgroundColor: "#3b82f6",
-                                }}
-                                onClick={() => setShowGpsChooser(true)}
-                              >
-                                <ExternalLink
-                                  size={16}
-                                  style={{
-                                    display: "inline",
-                                    marginRight: 4,
-                                    verticalAlign: "text-bottom",
-                                  }}
-                                />{" "}
-                                Naviguer
-                              </button>
-                            )}
-                            {routePolyline && (
-                              <button
-                                className="btn btn-secondary"
-                                style={{
-                                  padding: "0.5rem",
-                                  color: "var(--primary)",
-                                  borderColor: "var(--primary)",
-                                }}
-                                onClick={handleLaunchExternalGps}
-                              >
-                                <ExternalLink size={14} /> GPS
-                              </button>
-                            )}
+
+                              {/* Pill Action Buttons */}
+                              <div className="sheet-actions">
+                                {/* Itinéraire */}
+                                {!routePolyline && selectedOp.status !== "terminée" && (
+                                  <button
+                                    className="sheet-action-pill"
+                                    style={{ color: "#3b5edb", borderColor: "#c7d2fe", background: "#eef2ff" }}
+                                    onClick={() => handleCalculateRoute(selectedOp)}
+                                  >
+                                    <Navigation size={14} style={{ transform: "rotate(45deg)" }} />
+                                    Itinéraire
+                                  </button>
+                                )}
+                                {/* Appeler */}
+                                {client?.phone && (
+                                  <a href={`tel:${client.phone}`} className="sheet-action-pill">
+                                    📞 Appeler
+                                  </a>
+                                )}
+                                {/* GPS Externe */}
+                                {routePolyline && (
+                                  <button className="sheet-action-pill" onClick={() => setShowGpsChooser(true)}>
+                                    <ExternalLink size={14} />
+                                    GPS
+                                  </button>
+                                )}
+                                {/* Signaler */}
+                                <button
+                                  className="sheet-action-pill"
+                                  onClick={() => setShowReportIssueModal(true)}
+                                >
+                                  ⚠️ Signaler
+                                </button>
+                              </div>
+
+                              {/* Statut mission : Démarrer / Pause / Terminer */}
+                              <div style={{ display: "flex", gap: "0.65rem", flexWrap: "wrap" }}>
+                                {selectedOp.status === "planifiée" && (
+                                  <button
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, borderRadius: "50px", padding: "0.65rem 1rem", fontWeight: 700 }}
+                                    onClick={() => handleStatusChange(selectedOp.id, "en cours")}
+                                  >
+                                    🚀 Démarrer la mission
+                                  </button>
+                                )}
+                                {selectedOp.status === "en cours" && (
+                                  <>
+                                    <button
+                                      className="btn btn-secondary"
+                                      style={{ flex: 1, borderRadius: "50px", padding: "0.6rem 1rem", background: "#f1f5f9", color: "#334155", border: "1px solid #e2e8f0" }}
+                                      onClick={() => handleStatusChange(selectedOp.id, "planifiée")}
+                                    >
+                                      ⏸ En pause
+                                    </button>
+                                    <button
+                                      className="btn"
+                                      style={{ flex: 1.5, borderRadius: "50px", padding: "0.6rem 1rem", background: "#10b981", color: "white", border: "none", fontWeight: 700 }}
+                                      onClick={() => handleStatusChange(selectedOp.id, "terminée")}
+                                    >
+                                      ✅ Terminer
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+
+                              {/* Photo Carousel */}
+                              <div className="sheet-divider" />
+                              <div className="sheet-carousel-container">
+                                {carouselImages.map((src, i) => (
+                                  <img
+                                    key={i}
+                                    src={src}
+                                    alt={`Photo ${i + 1}`}
+                                    className="sheet-carousel-image"
+                                    onError={(e) => { e.target.style.display = "none"; }}
+                                  />
+                                ))}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        );
+                      })()}
 
                       {/* GPS Chooser Modal — handled by outer modal below */}
                     </div>
+
                   ) : mobileTab === "list" ? (
                     /* LIST TAB */
                     <div className="mobile-job-list">

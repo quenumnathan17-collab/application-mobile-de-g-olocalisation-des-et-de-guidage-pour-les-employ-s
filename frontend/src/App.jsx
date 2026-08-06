@@ -288,16 +288,11 @@ export default function App() {
     return <Login onLoginSuccess={handleLoginSuccess} apiUrl={API_URL} />;
   }
 
-  // Force layout based on role or screen size
-  const effectiveLayoutMode =
-    currentUser.role === "employee"
-      ? "mobile"
-      : isMobileScreen && layoutMode === "split"
-        ? "admin"
-        : layoutMode;
+  // Force layout based on role
+  const effectiveLayoutMode = currentUser.role === "admin" ? "admin" : "mobile";
 
-  // Hide global header on mobile screen if we are in mobile simulator view
-  const showHeader = !isMobileScreen || effectiveLayoutMode !== "mobile";
+  // Hide global header on mobile view (technicians see their own header)
+  const showHeader = currentUser.role === "admin";
 
   return (
     <div className="app-container">
@@ -322,36 +317,6 @@ export default function App() {
               <span>— Portail Terrain</span>
             </span>
           </div>
-
-          {/* Layout Switcher Buttons (Only visible for Admins) */}
-          {currentUser.role === "admin" && (
-            <div className="layout-switch-group">
-              <button
-                onClick={() => setLayoutMode("split")}
-                className={`layout-switch-btn ${layoutMode === "split" ? "active" : ""}`}
-                title="Double Vue"
-              >
-                <LayoutGrid size={15} />
-                <span className="layout-btn-text">Double Vue</span>
-              </button>
-              <button
-                onClick={() => setLayoutMode("admin")}
-                className={`layout-switch-btn ${layoutMode === "admin" ? "active" : ""}`}
-                title="Administration Plein Écran"
-              >
-                <Monitor size={15} />
-                <span className="layout-btn-text">Portail Admin</span>
-              </button>
-              <button
-                onClick={() => setLayoutMode("mobile")}
-                className={`layout-switch-btn ${layoutMode === "mobile" ? "active" : ""}`}
-                title="Simulateur Mobile"
-              >
-                <Smartphone size={15} />
-                <span className="layout-btn-text">Mobile</span>
-              </button>
-            </div>
-          )}
 
           <div className="header-actions">
             <div
@@ -384,10 +349,10 @@ export default function App() {
         </header>
       )}
 
-      {/* 2. Main split screens layout */}
+      {/* 2. Main content area */}
       <main className={`main-content layout-${effectiveLayoutMode}`}>
-        {/* Left Side: Admin Dashboard */}
-        {effectiveLayoutMode !== "mobile" && (
+        {/* Admin Dashboard */}
+        {effectiveLayoutMode === "admin" && (
           <AdminDashboard
             clients={clients}
             employees={employees}
@@ -405,38 +370,40 @@ export default function App() {
           />
         )}
 
-        {/* Right Side: Smartphone Simulator for Technicians */}
-        <div
-          style={{
-            display: effectiveLayoutMode === "admin" ? "none" : "block",
-            position: "relative",
-            height: "100%",
-            overflow: "hidden",
-          }}
-        >
-          <MobileSimulator
-            clients={clients}
-            employees={employees}
-            operations={operations}
-            activeEmployeeId={
-              activeEmployeeId ||
-              (currentUser?.role === "employee" ? currentUser.id : null)
-            }
-            setActiveEmployeeId={setActiveEmployeeId}
-            updateOperationStatus={handleUpdateOperationStatus}
-            updateEmployeeGps={handleUpdateEmployeeGps}
-            addNotification={triggerNotification}
-            onProfileUpdated={onProfileUpdated}
-            layoutMode={effectiveLayoutMode}
-            currentUser={currentUser}
-            theme={theme}
-            isMobileScreen={isMobileScreen}
-            portalLogout={handleLogout}
-            toggleTheme={toggleTheme}
-            setLayoutMode={setLayoutMode}
-            activeNotification={activeNotification}
-          />
-        </div>
+        {/* Standalone Responsive Mobile Application */}
+        {effectiveLayoutMode === "mobile" && (
+          <div
+            style={{
+              position: "relative",
+              height: "100%",
+              width: "100%",
+              overflow: "hidden",
+            }}
+          >
+            <MobileSimulator
+              clients={clients}
+              employees={employees}
+              operations={operations}
+              activeEmployeeId={
+                activeEmployeeId ||
+                (currentUser?.role === "employee" ? currentUser.id : null)
+              }
+              setActiveEmployeeId={setActiveEmployeeId}
+              updateOperationStatus={handleUpdateOperationStatus}
+              updateEmployeeGps={handleUpdateEmployeeGps}
+              addNotification={triggerNotification}
+              onProfileUpdated={onProfileUpdated}
+              layoutMode={effectiveLayoutMode}
+              currentUser={currentUser}
+              theme={theme}
+              isMobileScreen={isMobileScreen}
+              portalLogout={handleLogout}
+              toggleTheme={toggleTheme}
+              setLayoutMode={() => {}}
+              activeNotification={activeNotification}
+            />
+          </div>
+        )}
       </main>
 
       <Snackbar
