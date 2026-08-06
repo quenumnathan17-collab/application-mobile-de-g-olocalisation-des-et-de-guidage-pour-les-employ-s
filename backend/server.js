@@ -21,7 +21,11 @@ app.use(cors());
 app.use(express.json({ limit: BODY_SIZE_LIMIT }));
 app.use(express.urlencoded({ extended: true, limit: BODY_SIZE_LIMIT }));
 
-// ── SSE Endpoint ─────────────────────────────────────────────────────────────
+// ── API Root & SSE Endpoints ───────────────────────────────────────────────────
+app.get("/", (req, res) => {
+  res.json({ message: "Bienvenue sur l'API de YA Consulting ! Le serveur est en ligne. 🚀" });
+});
+
 app.get("/api/events", (req, res) => {
   registerSSEClient(req, res);
 });
