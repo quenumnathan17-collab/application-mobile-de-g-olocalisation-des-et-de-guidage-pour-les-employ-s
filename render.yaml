@@ -1,9 +1,9 @@
-﻿services:
+services:
   - type: web
     name: ya-consulting-api
     env: node
     rootDir: backend
-    buildCommand: "npm install && npx prisma generate && npx prisma migrate deploy"
+    buildCommand: "npm install && npx prisma generate && npx prisma db push --accept-data-loss"
     startCommand: npm start
     envVars:
       - key: DATABASE_URL
