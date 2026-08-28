@@ -741,12 +741,11 @@ export default function AdminDashboard({
       scrollWheelZoom: true,
     }).setView([5.36, -4.0083], 12);
 
-    // Always use standard light voyager tile layer
     const tileUrl =
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
 
     L.tileLayer(tileUrl, {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
     }).addTo(mapInstance.current);
 
     markersGroup.current = L.layerGroup().addTo(mapInstance.current);

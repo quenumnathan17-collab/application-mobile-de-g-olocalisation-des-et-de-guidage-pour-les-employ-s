@@ -594,8 +594,8 @@ export default function MobileSimulator({
     }).setView([currentGps.lat, currentGps.lng], 13);
 
     // Always use standard light voyager tile layer
-    const MAP_TILES_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    const MAP_TILES_URL = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}";
+    const MAP_ATTRIBUTION = 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012';
 
     L.tileLayer(MAP_TILES_URL, {
       attribution: MAP_ATTRIBUTION,
