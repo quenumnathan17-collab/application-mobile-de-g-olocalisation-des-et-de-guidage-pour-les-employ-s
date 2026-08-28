@@ -594,11 +594,11 @@ export default function MobileSimulator({
     }).setView([currentGps.lat, currentGps.lng], 13);
 
     // Always use standard light voyager tile layer
-    const tileUrl =
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+    const MAP_TILES_URL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const MAP_ATTRIBUTION = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
-    L.tileLayer(tileUrl, {
-      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+    L.tileLayer(MAP_TILES_URL, {
+      attribution: MAP_ATTRIBUTION,
     }).addTo(mapInstance.current);
 
     markersGroup.current = L.layerGroup().addTo(mapInstance.current);
@@ -1445,12 +1445,6 @@ export default function MobileSimulator({
                       {/* Bottom sheet for operation detail */}
                       {selectedOp && (() => {
                         const client = clients.find(c => c.id === selectedOp.clientId);
-                        // Simulated photos from generic Abidjan business photos
-                        const carouselImages = [
-                          "https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=300&auto=format&fit=crop&q=80",
-                          "https://images.unsplash.com/photo-1497366216548-37526070297c?w=300&auto=format&fit=crop&q=80",
-                          "https://images.unsplash.com/photo-1524758631624-e2822e304c36?w=300&auto=format&fit=crop&q=80",
-                        ];
 
                         return (
                           <div
@@ -1637,19 +1631,6 @@ export default function MobileSimulator({
                                 )}
                               </div>
 
-                              {/* Photo Carousel */}
-                              <div className="sheet-divider" />
-                              <div className="sheet-carousel-container">
-                                {carouselImages.map((src, i) => (
-                                  <img
-                                    key={i}
-                                    src={src}
-                                    alt={`Photo ${i + 1}`}
-                                    className="sheet-carousel-image"
-                                    onError={(e) => { e.target.style.display = "none"; }}
-                                  />
-                                ))}
-                              </div>
                             </div>
                           </div>
                         );
@@ -3148,12 +3129,12 @@ export default function MobileSimulator({
                 gap: "0.5rem",
               }}
             >
-              <History size={20} color="#3b5edb" /> Trajets de la journée
+              <History size={20} color="#3b5edb" /> Historique des interventions
             </h3>
 
             <div
               style={{
-                maxHeight: "250px",
+                maxHeight: "350px",
                 overflowY: "auto",
                 display: "flex",
                 flexDirection: "column",
@@ -3163,13 +3144,11 @@ export default function MobileSimulator({
               }}
             >
               {(() => {
-                const completedToday = operations.filter(
-                  (op) =>
-                    op.employeeId === activeEmployee?.id &&
-                    op.status === "terminée",
-                );
+                const employeeHistory = operations
+                  .filter((op) => op.employeeId === activeEmployee?.id)
+                  .sort((a, b) => new Date(b.date) - new Date(a.date));
 
-                if (completedToday.length === 0) {
+                if (employeeHistory.length === 0) {
                   return (
                     <div
                       style={{
@@ -3179,12 +3158,12 @@ export default function MobileSimulator({
                         padding: "1.5rem 0",
                       }}
                     >
-                      Aucun trajet terminé aujourd'hui.
+                      Aucune intervention dans l'historique.
                     </div>
                   );
                 }
 
-                return completedToday.map((op) => {
+                return employeeHistory.map((op) => {
                   const client = clients.find((c) => c.id === op.clientId);
                   return (
                     <div
@@ -3202,9 +3181,14 @@ export default function MobileSimulator({
                           fontWeight: 700,
                           fontSize: "0.85rem",
                           color: "#0f172a",
+                          display: "flex",
+                          justifyContent: "space-between"
                         }}
                       >
-                        {client?.name || "Client"}
+                        <span>{client?.name || "Client"}</span>
+                        <span style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: "normal" }}>
+                          {new Date(op.date).toLocaleDateString("fr-FR")}
+                        </span>
                       </div>
                       <div
                         style={{
@@ -3217,20 +3201,30 @@ export default function MobileSimulator({
                       </div>
                       <div
                         style={{
+                          fontSize: "0.75rem",
+                          color: "#334155",
+                          marginTop: "0.4rem",
+                          fontStyle: "italic"
+                        }}
+                      >
+                        {op.description}
+                      </div>
+                      <div
+                        style={{
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
-                          marginTop: "0.5rem",
+                          marginTop: "0.6rem",
                         }}
                       >
                         <span
-                          className="badge badge-terminée"
+                          className={`badge badge-${op.status.replace(/\s+/g, "")}`}
                           style={{ fontSize: "0.65rem" }}
                         >
-                          Terminé
+                          {op.status}
                         </span>
                         <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>
-                          Mission accomplie
+                          {op.status === "terminée" ? "Mission accomplie" : "Détails de mission"}
                         </span>
                       </div>
                     </div>

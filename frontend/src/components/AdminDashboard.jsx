@@ -743,10 +743,10 @@ export default function AdminDashboard({
 
     // Always use standard light voyager tile layer
     const tileUrl =
-      "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
 
     L.tileLayer(tileUrl, {
-      attribution: "&copy; OpenStreetMap contributors &copy; CARTO",
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapInstance.current);
 
     markersGroup.current = L.layerGroup().addTo(mapInstance.current);
