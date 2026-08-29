@@ -623,7 +623,7 @@ export default function MobileSimulator({
         mapInstance.current = null;
       }
     };
-  }, [activeEmployeeId, mobileTab, theme]);
+  }, [activeEmployeeId, activeEmployee, mobileTab, theme]);
 
   // Invalidate map size when container resizes
   useEffect(() => {
