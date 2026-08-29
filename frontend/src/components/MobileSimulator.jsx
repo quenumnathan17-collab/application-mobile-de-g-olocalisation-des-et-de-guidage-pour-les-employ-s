@@ -625,14 +625,17 @@ export default function MobileSimulator({
     };
   }, [activeEmployeeId, mobileTab, theme]);
 
-  // Invalidate map size when mobileTab or layoutMode changes
+  // Invalidate map size when container resizes
   useEffect(() => {
-    if (mapInstance.current) {
-      setTimeout(() => {
+    if (!mapRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (mapInstance.current) {
         mapInstance.current.invalidateSize();
-      }, 200);
-    }
-  }, [mobileTab, layoutMode]);
+      }
+    });
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Sync selectedOp with latest operations data from props to avoid stale status buttons
   useEffect(() => {

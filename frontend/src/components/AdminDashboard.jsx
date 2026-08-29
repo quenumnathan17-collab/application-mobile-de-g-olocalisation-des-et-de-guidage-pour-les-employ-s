@@ -758,14 +758,17 @@ export default function AdminDashboard({
     };
   }, [activeTab, currentTheme]);
 
-  // Invalidate map size when tab or layoutMode changes
+  // Invalidate map size when container resizes
   useEffect(() => {
-    if (mapInstance.current) {
-      setTimeout(() => {
+    if (!mapRef.current) return;
+    const observer = new ResizeObserver(() => {
+      if (mapInstance.current) {
         mapInstance.current.invalidateSize();
-      }, 200);
-    }
-  }, [activeTab, layoutMode]);
+      }
+    });
+    observer.observe(mapRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   // Update Map Markers
   useEffect(() => {
