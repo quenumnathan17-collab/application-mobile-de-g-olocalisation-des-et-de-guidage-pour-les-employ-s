@@ -141,9 +141,19 @@ function LoginForm({ onLoginSuccess, apiUrl = "" }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Erreur de connexion");
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("organization", JSON.stringify(data.organization));
+      if (data.user.role === "admin") {
+        sessionStorage.setItem("token", data.token);
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem("organization", JSON.stringify(data.organization));
+        // Clear any old local storage
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("organization");
+      } else {
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("organization", JSON.stringify(data.organization));
+      }
       onLoginSuccess(data.user, data.organization);
     } catch (err) {
       setError(err.message);
@@ -695,9 +705,12 @@ function RegisterCompanyForm({ onSwitchToLogin, onLoginSuccess, apiUrl = "" }) {
           data.error || "Erreur lors de la création de l'entreprise.",
         );
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-      localStorage.setItem("organization", JSON.stringify(data.organization));
+      sessionStorage.setItem("token", data.token);
+      sessionStorage.setItem("user", JSON.stringify(data.user));
+      sessionStorage.setItem("organization", JSON.stringify(data.organization));
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      localStorage.removeItem("organization");
 
       setSuccess("Entreprise enregistrée avec succès !");
       setTimeout(() => onLoginSuccess(data.user, data.organization), 1500);

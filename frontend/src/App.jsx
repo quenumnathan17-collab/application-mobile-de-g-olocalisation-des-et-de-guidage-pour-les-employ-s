@@ -63,12 +63,26 @@ export default function App() {
 
   // Auth State
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem("user");
-    return saved ? JSON.parse(saved) : null;
+    const sessionUser = sessionStorage.getItem("user");
+    if (sessionUser) return JSON.parse(sessionUser);
+
+    const localUser = localStorage.getItem("user");
+    if (localUser) {
+      const parsedUser = JSON.parse(localUser);
+      // Force admin to login if their session was previously stored in localStorage
+      if (parsedUser.role === "admin") {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("organization");
+        return null;
+      }
+      return parsedUser;
+    }
+    return null;
   });
 
   const [currentOrg, setCurrentOrg] = useState(() => {
-    const saved = localStorage.getItem("organization");
+    const saved = sessionStorage.getItem("organization") || localStorage.getItem("organization");
     return saved ? JSON.parse(saved) : null;
   });
 
@@ -77,6 +91,9 @@ export default function App() {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("organization");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("organization");
     setCurrentUser(null);
     setCurrentOrg(null);
   };
@@ -89,7 +106,7 @@ export default function App() {
   const API_URL = import.meta.env.VITE_API_URL || "";
 
   const apiFetch = async (url, options = {}) => {
-    const token = localStorage.getItem("token");
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
     const headers = {
       ...options.headers,
     };
