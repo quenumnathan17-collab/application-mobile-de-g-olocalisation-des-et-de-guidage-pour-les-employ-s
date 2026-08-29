@@ -117,7 +117,7 @@ h1, h2, h3, h4, h5, h6 {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
@@ -255,7 +255,6 @@ h1, h2, h3, h4, h5, h6 {
   display: grid;
   flex: 1;
   overflow: hidden;
-  height: calc(100vh - 73px);
   position: relative;
 }
 
