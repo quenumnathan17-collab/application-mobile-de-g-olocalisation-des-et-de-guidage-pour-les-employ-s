@@ -167,6 +167,12 @@ export default function App() {
         fetchOperations();
       } else if (data.type === "ADDRESS_REPORT_CREATED") {
         setSnackbarMessage(data.message);
+      } else if (data.type === "EMPLOYEE_GPS_UPDATED") {
+        setEmployees((prev) =>
+          prev.map((emp) =>
+            emp.id === data.employeeId ? { ...emp, gps: data.gps } : emp,
+          ),
+        );
       }
     };
 
