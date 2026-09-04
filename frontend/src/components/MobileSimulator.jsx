@@ -391,7 +391,7 @@ export default function MobileSimulator({
         (error) => {
           console.warn("GPS Réel indisponible, fallback au GPS de test", error);
         },
-        { enableHighAccuracy: true, maximumAge: 10000, timeout: 5000 },
+        { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 },
       );
       return () => navigator.geolocation.clearWatch(watchId);
     }
